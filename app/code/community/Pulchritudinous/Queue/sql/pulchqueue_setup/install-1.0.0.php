@@ -48,17 +48,6 @@ $table = $this->getConnection()
         'Worker Priority'
     )
     ->addColumn(
-        'execute_at',
-        Varien_Db_Ddl_Table::TYPE_INTEGER,
-        null,
-        [
-            'unsigned'  => true,
-            'nullable'  => false,
-            'default'   => '0',
-        ],
-        'Execute on Unix timestamp'
-    )
-    ->addColumn(
         'payload',
         Varien_Db_Ddl_Table::TYPE_TEXT,
         '64k',
@@ -88,6 +77,25 @@ $table = $this->getConnection()
         'Retries'
     )
     ->addColumn(
+        'pid',
+        Varien_Db_Ddl_Table::TYPE_INTEGER,
+        null,
+        [
+            'unsigned'  => true,
+            'nullable'  => true,
+        ],
+        'PID'
+    )
+    ->addColumn(
+        'execute_at',
+        Varien_Db_Ddl_Table::TYPE_INTEGER,
+        null,
+        [
+            'nullable'  => false,
+        ],
+        'Time to execute'
+    )
+    ->addColumn(
         'created_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
@@ -105,14 +113,18 @@ $table = $this->getConnection()
         'started_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
-        [],
+        [
+            'nullable'  => false,
+        ],
         'Updated At'
     )
     ->addColumn(
         'finished_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
-        [],
+        [
+            'nullable'  => false,
+        ],
         'Updated At'
     )
     ->setComment('Worker Queue');

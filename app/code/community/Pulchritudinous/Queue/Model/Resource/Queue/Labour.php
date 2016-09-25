@@ -51,7 +51,25 @@ class Pulchritudinous_Queue_Model_Resource_Labour
      */
     public function loadByWorkerIdentity(Pulchritudinous_Queue_Model_Labour $labour, $worker, $identity)
     {
+        $adapter = $this->_getReadAdapter();
 
+        $select = $adapter->select()
+            ->from($this->getTable(), 'entity_id')
+            ->where('worker = :worker')
+            ->where('identity = :identity');
+
+        $bind = [
+            ':worker'   => (string) $worker,
+            ':identity' => (string) $identity,
+        ];
+
+        $result = $adapter->fetchOne($select, $bind);
+
+        if ($result) {
+            $labour->setData($result);
+        }
+
+        return $this;
     }
 
     /**
@@ -64,7 +82,47 @@ class Pulchritudinous_Queue_Model_Resource_Labour
      */
     public function removeUnprocessedByWorkerIdentity($worker, $identity)
     {
+        $adapter = $this->_getWriteAdapter();
 
+        $result = $adapter->delete(
+            $this->getTable(),
+            implode(
+                ' AND ',
+                [
+                    $adapter->quoteInto('worker = ?', (string) $worker),
+                    $adapter->quoteInto('product_id = ?', (string) $identity),
+                ]
+            )
+        );
+
+        return $result;
+    }
+
+    /**
+     *
+     *
+     * @param  string $worker
+     * @param  string $identity
+     *
+     * @return boolean
+     */
+    public function hasUnprocessedWorkerIdentity($worker, $identity)
+    {
+        $adapter = $this->_getReadAdapter();
+
+        $select = $adapter->select()
+            ->from($this->getTable(), 'id')
+            ->where('worker = :worker')
+            ->where('identity = :identity')
+            ->where('running = :running');
+
+        $bind = [
+            ':worker'   => (string) $worker,
+            ':identity' => (string) $identity,
+            ':running'  => false,
+        ];
+
+        return $adapter->fetchOne($select, $bind);
     }
 }
 

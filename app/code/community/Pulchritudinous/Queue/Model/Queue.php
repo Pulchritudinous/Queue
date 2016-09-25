@@ -34,68 +34,69 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Add a job to the queue that will be asynchronously handled by a worker.
      *
-     * @param  string $worker
-     * @param  array  $payload
-     * @param  string $identity
+     * @param  string                  $worker
+     * @param  array                   $payload
+     * @param  string                  $identity
+     * @param  false|integer|Zend_Date $delay
      *
      * @return boolean
      *
      * @throws Mage_Core_Exception
      */
-    public function add(string $worker, array $payload, $identity = '')
+    public function add(string $worker, array $payload, $identity = '', $delay = false)
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
         $time           = time();
+        $when           = now();
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
         }
 
         if (!is_array($payload)) {
-            Mage::throwException("Payload must be of type array");
+            Mage::throwException('Payload must be of type array');
         }
 
         if (!is_string($identity)) {
-            Mage::throwException("Identity needs to be of type string");
+            Mage::throwException('Identity needs to be of type string');
+        }
+
+        if ($delay !== false) {
+            if (is_numeric($delay)) {
+                $unixtime   = $time + $config->getDelay();
+                $when       = date('Y-m-d H:i:s', $unixTimestamp);
+            } elseif ($delay instanceof Zend_Date) {
+                $when = $delay->toString('Y-m-d H:i:s');
+            } elseif (is_numeric($config->getDelay())) {
+                $config->getDelay();
+            }
         }
 
         if ($config->getRule() == 'ignore') {
-            $message = $this->_getCollection()->findOne(
-                [
-                    'worker'    => $worker,
-                    'identity'  => $identity,
-                ]
+            $hasLabour = $this->getResource()->hasUnprocessedWorkerIdentity(
+                $worker,
+                $identity
             );
 
-            if ($message !== null && array_key_exists('_id', $message)) {
+            if ($hasLabour == true) {
                 return true;
             }
         } elseif ($config->getRule() == 'replace') {
-            $this->_getCollection()->deleteMany(
-                [
-                    'finished'  => false,
-                    'running'   => false,
-                    'worker'    => $worker,
-                    'identity'  => $identity,
-                ]
+            $this->getResource()->removeUnprocessedByWorkerIdentity(
+                $worker,
+                $identity
             );
         }
 
-        $message = [
-            'payload'       => $this->_validateArrayData($payload),
-            'worker'        => $worker,
-            'identity'      => $identity,
-            'running'       => false,
-            'started_at'    => null,
-            'when'          => min(max(0, $time + $config->getDelay()), self::MONGO_INT32_MAX),
-            'priority'      => (integer) $config->getPriority(),
-            'created'       => $time,
-            'finished'      => false,
-            'retries'       => 0,
-        ];
-
-        $this->_getCollection()->insertOne($message);
+        Mage::getModel('pulchqueue/labour')
+            ->setWorker($worker)
+            ->setIdentity($identity)
+            ->setPriority($priority)
+            ->setPayload($this->_validateArrayData($payload))
+            ->setStatus($status)
+            ->setExecuteAt($when)
+            ->save();
 
         return true;
     }
@@ -135,24 +136,18 @@ class Pulchritudinous_Queue_Model_Queue
      */
     public function reserve()
     {
-        $configModel = Mage::getSingleton('pulchqueue/worker_config');
+        $configModel        = Mage::getSingleton('pulchqueue/worker_config');
+        $running            = [];
+        $runningCollection  = $this->getRunning();
+        $queueCollection    = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('running', ['eq' => 0])
+            ->addFieldToFilter('execute_at', ['gteq' => now()])
+            ->setOrder('priority', 'ASC')
+            ->setOrder('created', 'ASC');
 
-        $query      = ['running' => false];
-        $options    = [
-            'sort' => [
-                'priority'  => 1,
-                'created'   => 1
-            ]
-        ];
-
-        $running    = [];
-        $queue      = $this->_getCollection()->find(
-            ['running' => true]
-        );
-
-        foreach ($queue as $message) {
-            $message    = new Varien_Object($message);
-            $identity   = "{$message->getWorker()}-{$message->getIdentity()}";
+        foreach ($runningCollection as $labour) {
+            $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             $running[$identity] = null;
         }
@@ -161,18 +156,17 @@ class Pulchritudinous_Queue_Model_Queue
         $batch              = false;
         $messageCollection  = new Varien_Data_Collection();
 
-        foreach ($queue as $message) {
-            $message    = new Varien_Object($message);
+        foreach ($queueCollection as $labour) {
             $config     = $configModel->getWorkerConfig($message->getWorker());
-            $identity   = "{$message->getWorker()}-{$message->getIdentity()}";
+            $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             if ($batch == false) {
                 if ($config->getRule() == 'batch') {
-                    $batch = $message->getWorker();
+                    $batch = $labour->getWorker();
                 }
 
                 if ($config->getRule() == 'run') {
-                    return $this->_beforeReturn($message);
+                    return $this->_beforeReturn($labour);
                 }
 
                 if ($config->getRule() == 'wait') {
@@ -180,7 +174,7 @@ class Pulchritudinous_Queue_Model_Queue
                         continue;
                     }
 
-                    return $this->_beforeReturn($message);
+                    return $this->_beforeReturn($labour);
                 }
             }
 
@@ -188,10 +182,34 @@ class Pulchritudinous_Queue_Model_Queue
                 continue;
             }
 
-            $messageCollection->addItem($message);
+            $messageCollection->addItem($labour);
         }
 
         return $this->_beforeReturn($messageCollection);
+    }
+
+    /**
+     *
+     *
+     * @return Varien_Data_Collection|Varien_Object
+     */
+    public function getRunning()
+    {
+        $collection = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('running', ['eq' => 1]);
+
+        foreach ($collection as $labour) {
+            if (!posix_kill($labour->getPid(), 0)) {
+                $labour->setRunning(0);
+                $labour->setFinishedAt(now());
+                $labour->setStatus('unknown');
+
+                $collection->removeItemByKey($labour->getId());
+            }
+        }
+
+        return $collection;
     }
 
     /**
