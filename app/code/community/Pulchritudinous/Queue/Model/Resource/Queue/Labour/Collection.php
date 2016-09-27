@@ -29,15 +29,15 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Resource_Labour_Collection
+class Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
     extends Mage_Core_Model_Resource_Db_Collection_Abstract
 {
     /**
      * Initial configuration.
      */
-    public function __construct()
+    protected function _construct()
     {
-        $this->_init('pulchqueue/labour', 'id');
+        $this->_init('pulchqueue/queue_labour');
     }
 }
 

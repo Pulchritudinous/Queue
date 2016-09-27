@@ -29,13 +29,13 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Resource_Labour
+class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     extends Mage_Core_Model_Resource_Db_Abstract
 {
     /**
      * Initial configuration.
      */
-    public function __construct()
+    protected function _construct()
     {
         $this->_init('pulchqueue/labour', 'id');
     }
@@ -123,6 +123,24 @@ class Pulchritudinous_Queue_Model_Resource_Labour
         ];
 
         return $adapter->fetchOne($select, $bind);
+    }
+
+    /**
+     * Prepare data for save
+     *
+     * @param Mage_Core_Model_Abstract $object
+     *
+     * @return array
+     */
+    protected function _prepareDataForSave(Mage_Core_Model_Abstract $object)
+    {
+        if (!$object->getId()) {
+            $object->setCreatedAt(now());
+        }
+
+        $object->setUpdatedAt(now());
+
+        return parent::_prepareDataForSave($object);
     }
 }
 

@@ -68,5 +68,15 @@
                 <class>Pulchritudinous_Queue_Block</class>
             </pulchqueue>
         </blocks>
+        <pulchqueue>
+            <queue>
+                <threads>2</threads>
+                <poll>200</poll>
+            </queue>
+            <worker>
+                <retries>1</retries>
+                <delay>0</delay>
+            </worker>
+        </pulchqueue>
     </global>
 </config>

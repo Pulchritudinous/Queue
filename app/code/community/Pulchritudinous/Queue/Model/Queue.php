@@ -43,7 +43,7 @@ class Pulchritudinous_Queue_Model_Queue
      *
      * @throws Mage_Core_Exception
      */
-    public function add(string $worker, array $payload, $identity = '', $delay = false)
+    public function add(string $worker, array $payload = [], $identity = '', $delay = false)
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
@@ -54,18 +54,15 @@ class Pulchritudinous_Queue_Model_Queue
             Mage::throwException("Unable to find worker with name {$worker}");
         }
 
-        if (!is_array($payload)) {
-            Mage::throwException('Payload must be of type array');
-        }
-
         if (!is_string($identity)) {
             Mage::throwException('Identity needs to be of type string');
         }
 
+        $when = date('Y-m-d H:i:s', $time + $config->getDelay());
+
         if ($delay !== false) {
             if (is_numeric($delay)) {
-                $unixtime   = $time + $config->getDelay();
-                $when       = date('Y-m-d H:i:s', $unixTimestamp);
+                $when = date('Y-m-d H:i:s', $time + $delay);
             } elseif ($delay instanceof Zend_Date) {
                 $when = $delay->toString('Y-m-d H:i:s');
             } elseif (is_numeric($config->getDelay())) {
@@ -92,9 +89,9 @@ class Pulchritudinous_Queue_Model_Queue
         Mage::getModel('pulchqueue/labour')
             ->setWorker($worker)
             ->setIdentity($identity)
-            ->setPriority($priority)
-            ->setPayload($this->_validateArrayData($payload))
-            ->setStatus($status)
+            ->setPriority($config->getPriority())
+            ->setPayload(serialize($this->_validateArrayData($payload)))
+            ->setStatus('pending')
             ->setExecuteAt($when)
             ->save();
 
@@ -210,38 +207,6 @@ class Pulchritudinous_Queue_Model_Queue
         }
 
         return $collection;
-    }
-
-    /**
-     * Marks jobs as started before returning.
-     *
-     * @param  Varien_Object|Varien_Data_Collection $object
-     *
-     * @return Varien_Data_Collection|Varien_Object
-     */
-    protected function _beforeReturn($object)
-    {
-        $query  = ['$or' => []];
-        $update = [
-            '$set' => [
-                'started_at'    => time(),
-                'running'       => true
-            ]
-        ];
-
-        if ($object instanceof Varien_Data_Collection) {
-            foreach ($object as $obj) {
-                $query['$or'][] = ['_id' => $obj->getData('_id')];
-            }
-        } else {
-            $query['$or'][] = ['_id' => $object->getData('_id')];
-        }
-
-        if (count($query['$or'])) {
-            $this->_getCollection()->updateMany($query, $update);
-        }
-
-        return $object;
     }
 
     /**

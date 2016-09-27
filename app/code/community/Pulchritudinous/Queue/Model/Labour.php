@@ -37,7 +37,7 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function __construct()
     {
-        $this->_init('pulchqueue/labour');
+        $this->_init('pulchqueue/queue_labour');
     }
 
     /**

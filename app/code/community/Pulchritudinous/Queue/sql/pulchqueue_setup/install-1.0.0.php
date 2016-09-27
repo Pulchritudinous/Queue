@@ -88,7 +88,7 @@ $table = $this->getConnection()
     )
     ->addColumn(
         'execute_at',
-        Varien_Db_Ddl_Table::TYPE_INTEGER,
+        Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
         [
             'nullable'  => false,
@@ -99,18 +99,13 @@ $table = $this->getConnection()
         'created_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
-        [],
+        [
+            'nullable'  => false,
+        ],
         'Created At'
     )
     ->addColumn(
         'updated_at',
-        Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
-        null,
-        [],
-        'Updated At'
-    )
-    ->addColumn(
-        'started_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
         [
@@ -119,11 +114,20 @@ $table = $this->getConnection()
         'Updated At'
     )
     ->addColumn(
+        'started_at',
+        Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
+        null,
+        [
+            'nullable'  => true,
+        ],
+        'Updated At'
+    )
+    ->addColumn(
         'finished_at',
         Varien_Db_Ddl_Table::TYPE_TIMESTAMP,
         null,
         [
-            'nullable'  => false,
+            'nullable'  => true,
         ],
         'Updated At'
     )
