@@ -101,6 +101,10 @@ class Pulchritudinous_Queue_Model_Config
             }
         }
 
+        if (is_string($workerConfig)) {
+            $workerConfig = new Varien_Simplexml_Config($workerConfig);
+        }
+
         return $workerConfig;
     }
 }
