@@ -99,9 +99,7 @@ class Pulchritudinous_Queue_Model_Config
                     [Mage_Core_Model_Config::CACHE_TAG]
                 );
             }
-        }
-
-        if (is_string($workerConfig)) {
+        } else {
             $workerConfig = new Varien_Simplexml_Config($workerConfig);
         }
 

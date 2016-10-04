@@ -37,7 +37,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
      */
     protected function _construct()
     {
-        $this->_init('pulchqueue/queue_labour');
+        $this->_init('pulchqueue/labour');
     }
 }
 

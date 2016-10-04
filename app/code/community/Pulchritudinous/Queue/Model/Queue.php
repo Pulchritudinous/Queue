@@ -138,10 +138,10 @@ class Pulchritudinous_Queue_Model_Queue
         $runningCollection  = $this->getRunning();
         $queueCollection    = Mage::getModel('pulchqueue/labour')
             ->getCollection()
-            ->addFieldToFilter('running', ['eq' => 0])
-            ->addFieldToFilter('execute_at', ['gteq' => now()])
+            ->addFieldToFilter('status', ['eq' => 'pending'])
+            ->addFieldToFilter('execute_at', ['lteq' => now()])
             ->setOrder('priority', 'ASC')
-            ->setOrder('created', 'ASC');
+            ->setOrder('created_at', 'ASC');
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
@@ -149,12 +149,11 @@ class Pulchritudinous_Queue_Model_Queue
             $running[$identity] = null;
         }
 
-        $queue              = $this->_getCollection()->find($query, $options);
         $batch              = false;
         $messageCollection  = new Varien_Data_Collection();
 
         foreach ($queueCollection as $labour) {
-            $config     = $configModel->getWorkerConfig($message->getWorker());
+            $config     = $configModel->getWorkerConfig($labour->getWorker());
             $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             if ($batch == false) {
@@ -175,7 +174,7 @@ class Pulchritudinous_Queue_Model_Queue
                 }
             }
 
-            if ($message->getWorker() != $batch) {
+            if ($labour->getWorker() != $batch) {
                 continue;
             }
 
@@ -194,7 +193,7 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
-            ->addFieldToFilter('running', ['eq' => 1]);
+            ->addFieldToFilter('status', ['eq' => 'running']);
 
         foreach ($collection as $labour) {
             if (!posix_kill($labour->getPid(), 0)) {
@@ -207,6 +206,39 @@ class Pulchritudinous_Queue_Model_Queue
         }
 
         return $collection;
+    }
+
+    /**
+     *
+     *
+     * @param  Varien_Data_Collection|Pulchritudinous_Queue_Model_Labour
+     *
+     * @return Varien_Data_Collection|Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _beforeReturn($object)
+    {
+
+        $data = [
+            'status'        => 'running',
+            'pid'           => 123,
+            'started_at'    => now(),
+        ];
+
+        if ($object instanceof Varien_Data_Collection) {
+            $transaction = Mage::getModel('core/resource_transaction');
+
+            foreach ($object as $obj) {
+                $obj->addData($data);
+                $transaction->addObject($obj);
+            }
+
+            $transaction->save();
+        } else {
+            $object->addData($data)->save();
+        }
+
+
+        return $object;
     }
 
     /**
