@@ -242,7 +242,9 @@ class Pulchritudinous_Queue_Model_Queue
                 $transaction->addObject($obj);
             }
 
-            $transaction->save();
+            if ($object->count()) {
+                $transaction->save();
+            }
         } else {
             $object->addData($data)->save();
         }
