@@ -48,7 +48,6 @@ class Pulchritudinous_Queue_Model_Queue
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
         $time           = time();
-        $when           = now();
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
@@ -66,7 +65,7 @@ class Pulchritudinous_Queue_Model_Queue
             } elseif ($delay instanceof Zend_Date) {
                 $when = $delay->toString('Y-m-d H:i:s');
             } elseif (is_numeric($config->getDelay())) {
-                $config->getDelay();
+                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
             }
         }
 
@@ -272,24 +271,36 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Reschedule a job to be run at a later time.
      *
-     * @param Varien_Object $job
-     * @param integer       $milliseconds
+     * @param  Pulchritudinous_Queue_Model_Labour $labour
+     * @param  false|integer|Zend_Date            $delay
      *
      * @return boolean
+     *
+     * @throws Mage_Core_Exception
      */
-    public function reschedule($job, $milliseconds = 0)
+    public function reschedule(Pulchritudinous_Queue_Model_Labour $labour, $delay = false)
     {
-        $update = [
-            '$set' => [
-                'running'   => false,
-                'when'      => min(max(0, $time + $milliseconds), self::MONGO_INT32_MAX),
-            ]
-        ];
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfig($worker);
+        $time           = time();
+        $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
 
-        $this->_getCollection()->updateOne(
-            ['_id'  => $job->getData('_id')],
-            $update
-        );
+        if ($delay !== false) {
+            if (is_numeric($delay)) {
+                $when = date('Y-m-d H:i:s', $time + $delay);
+            } elseif ($delay instanceof Zend_Date) {
+                $when = $delay->toString('Y-m-d H:i:s');
+            } elseif (is_numeric($config->getDelay())) {
+                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
+            }
+        }
+
+        $labour
+            ->setStatus('pending')
+            ->setExecuteAt($when)
+            ->save();
+
+        return true;
     }
 }
 
