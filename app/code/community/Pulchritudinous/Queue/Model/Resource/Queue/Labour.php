@@ -54,7 +54,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $adapter = $this->_getReadAdapter();
 
         $select = $adapter->select()
-            ->from($this->getTable(), 'entity_id')
+            ->from($this->getMainTable(), 'entity_id')
             ->where('worker = :worker')
             ->where('identity = :identity');
 
@@ -75,24 +75,28 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     /**
      *
      *
+     * @param  string $status
      * @param  string $worker
      * @param  string $identity
      *
      * @return boolean
      */
-    public function removeUnprocessedByWorkerIdentity($worker, $identity)
+    public function setStatusOnUnprocessedByWorkerIdentity($status, $worker, $identity)
     {
         $adapter = $this->_getWriteAdapter();
 
-        $result = $adapter->delete(
-            $this->getTable(),
-            implode(
-                ' AND ',
-                [
-                    $adapter->quoteInto('worker = ?', (string) $worker),
-                    $adapter->quoteInto('product_id = ?', (string) $identity),
-                ]
-            )
+        $data = [
+            'status'   => (string) $status,
+            'worker'   => (string) $worker,
+            'identity' => (string) $identity,
+        ];
+
+        $result = $adapter->update(
+            $this->getMainTable(),
+            $data,
+            [
+                'running'  => false,
+            ]
         );
 
         return $result;
@@ -111,7 +115,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $adapter = $this->_getReadAdapter();
 
         $select = $adapter->select()
-            ->from($this->getTable(), 'id')
+            ->from($this->getMainTable(), 'id')
             ->where('worker = :worker')
             ->where('identity = :identity')
             ->where('running = :running');

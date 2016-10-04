@@ -80,7 +80,8 @@ class Pulchritudinous_Queue_Model_Queue
                 return true;
             }
         } elseif ($config->getRule() == 'replace') {
-            $this->getResource()->removeUnprocessedByWorkerIdentity(
+            $this->getResource()->setStatusOnUnprocessedByWorkerIdentity(
+                'replaced',
                 $worker,
                 $identity
             );
@@ -217,7 +218,6 @@ class Pulchritudinous_Queue_Model_Queue
      */
     protected function _beforeReturn($object)
     {
-
         $data = [
             'status'        => 'running',
             'pid'           => 123,
