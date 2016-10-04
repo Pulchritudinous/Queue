@@ -196,14 +196,24 @@ class Pulchritudinous_Queue_Model_Queue
             ->getCollection()
             ->addFieldToFilter('status', ['eq' => 'running']);
 
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $hasUnknown     = false;
+
         foreach ($collection as $labour) {
             if (!posix_kill($labour->getPid(), 0)) {
-                $labour->setRunning(0);
+                $hasUnknown = true;
+
                 $labour->setFinishedAt(now());
                 $labour->setStatus('unknown');
 
+                $transaction->addObject($labour);
+
                 $collection->removeItemByKey($labour->getId());
             }
+        }
+
+        if ($hasUnknown == true) {
+            $transaction->save();
         }
 
         return $collection;
