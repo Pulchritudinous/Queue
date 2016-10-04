@@ -281,7 +281,7 @@ class Pulchritudinous_Queue_Model_Queue
     public function reschedule(Pulchritudinous_Queue_Model_Labour $labour, $delay = false)
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfig($worker);
+        $config         = $configModel->getWorkerConfig($labour->getWorker());
         $time           = time();
         $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
 
