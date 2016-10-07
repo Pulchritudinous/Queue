@@ -10,18 +10,25 @@ class Pulchritudinous_Queue_Shell
     extends Mage_Shell_Abstract
 {
     /**
-     * List of processes.
-     *
-     * @var array
-     */
-    protected $_processes = [];
-
-    /**
      *
      *
      * @var string
      */
     protected $_shellFile;
+
+    /**
+     * List of executed processes.
+     *
+     * @var Varien_Data_Collection
+     */
+    public static $processes;
+
+    /**
+     *
+     *
+     * @var Varien_Object
+     */
+    public static $configData;
 
     /**
      * Initialize application and parse input parameters
@@ -86,21 +93,25 @@ class Pulchritudinous_Queue_Shell
         $count          = 0;
         $binfile        = (isset($_SERVER['_'])) ? $_SERVER['_'] : 'php';
         $shellfile      = $this->_shellFile;
+        $cwd            = sys_get_temp_dir();
         $queue          = Mage::getSingleton('pulchqueue/queue');
         $configModel    = Mage::getSingleton('pulchqueue/config');
         $configData     = new Varien_Object(
             Mage::getConfig()->getNode('global/pulchqueue')->asArray()
         );
-
-        $cwd    = sys_get_temp_dir();
-        $spec   = [
+        $spec           = [
            ['pipe', 'r'],
            ['pipe', 'w'],
            ['pipe', 'w']
        ];
 
+        self::$configData   = $configData;
+        self::$processes    = new Varien_Data_Collection();
+
         while (true) {
             $this->_validateProcesses();
+
+            $processes = self::$processes;
 
             if (!$this->_canStartNext()) {
                 usleep($configData->getData('queue/poll'));
@@ -112,8 +123,13 @@ class Pulchritudinous_Queue_Shell
             $resource   = proc_open($command, $spec, $pipes, $cwd);
             $status     = proc_get_status($resource);
 
-            if ($status && isset($status['pid'])) {
-                $this->_processes[] = $status['pid'];
+            if ($status && $status['running']) {
+                $processes->addItem(
+                    new Varien_Object([
+                        'id'        => $status['pid'],
+                        'resource'  => $resource,
+                    ])
+                );
             }
 
             usleep($configData->getData('queue/poll'));
@@ -125,13 +141,15 @@ class Pulchritudinous_Queue_Shell
     /**
      *
      *
-     *
+     * @return Pulchritudinous_Queue_Shell
      */
     protected function _validateProcesses()
     {
-        foreach ($this->_processes as $key => $process) {
-            if (!$this->_validateProcess($process)) {
-                unset($this->_processes[$key]);
+        $processes = self::$processes;
+
+        foreach ($processes as $process) {
+            if (!$this->_validateProcess($process->getResource())) {
+                $process->removeItemByKey($process->getId());
             }
         }
 
@@ -141,11 +159,13 @@ class Pulchritudinous_Queue_Shell
     /**
      *
      *
+     * @param  resource $resource
+     *
      * @return boolean
      */
-    protected function _validateProcess($process)
+    protected function _validateProcess($resource)
     {
-        $status = proc_get_status($process);
+        $status = proc_get_status($resource);
 
         return $status['running'];
     }
