@@ -1,0 +1,30 @@
+{
+    "name": "pulchritudinous/queue",
+    "type": "magento-module",
+    "description": "Magento Queue",
+    "authors": [
+        {
+            "name": "Anton Samuelsson",
+            "email": "samuelsson.anton@gmail.com"
+        }
+    ],
+    "require": {
+        "magento-hackathon/magento-composer-installer":"*"
+    },
+    "extra": {
+        "map": [
+            [
+                "app/etc/modules/Pulchritudinous_Queue.xml",
+                "app/etc/modules/Pulchritudinous_Queue.xml"
+            ],
+            [
+                "app/code/community/Pulchritudinous/Queue/",
+                "app/code/community/Pulchritudinous/Queue/"
+            ]
+            [
+                "shell/queue.php",
+                "shell/queue.php"
+            ]
+        ]
+    }
+}
