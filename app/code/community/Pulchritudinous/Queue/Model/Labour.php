@@ -55,5 +55,19 @@ class Pulchritudinous_Queue_Model_Labour
 
         return $this;
     }
+
+    /**
+     *
+     */
+    public function execute()
+    {
+        $data = [
+            'status'        => 'running',
+            'started_at'    => now(),
+            'pid'           => getmypid,
+        ];
+
+        $labour->addData($data)->save();
+    }
 }
 

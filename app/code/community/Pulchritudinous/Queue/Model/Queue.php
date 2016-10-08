@@ -47,7 +47,6 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
-        $time           = time();
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
@@ -55,18 +54,6 @@ class Pulchritudinous_Queue_Model_Queue
 
         if (!is_string($identity)) {
             Mage::throwException('Identity needs to be of type string');
-        }
-
-        $when = date('Y-m-d H:i:s', $time + $config->getDelay());
-
-        if ($delay !== false) {
-            if (is_numeric($delay)) {
-                $when = date('Y-m-d H:i:s', $time + $delay);
-            } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString('Y-m-d H:i:s');
-            } elseif (is_numeric($config->getDelay())) {
-                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
-            }
         }
 
         if ($config->getRule() == 'ignore') {
@@ -92,10 +79,36 @@ class Pulchritudinous_Queue_Model_Queue
             ->setPriority($config->getPriority())
             ->setPayload(serialize($this->_validateArrayData($payload)))
             ->setStatus('pending')
-            ->setExecuteAt($when)
+            ->setExecuteAt($this->_getWhen($config, $delay))
             ->save();
 
         return true;
+    }
+
+    /**
+     *
+     *
+     * @param  Varien_Object           $config
+     * @param  false|integer|Zend_Date $delay
+     *
+     * @return string
+     */
+    protected function _getWhen($config, $delay = false)
+    {
+        $time           = time();
+        $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
+
+        if ($delay !== false) {
+            if (is_numeric($delay)) {
+                $when = date('Y-m-d H:i:s', $time + $delay);
+            } elseif ($delay instanceof Zend_Date) {
+                $when = $delay->toString('Y-m-d H:i:s');
+            } elseif (is_numeric($config->getDelay())) {
+                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
+            }
+        }
+
+        return $when;
     }
 
     /**
@@ -129,7 +142,7 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Receive next job from the queue.
      *
-     * @return Varien_Data_Collection|Varien_Object
+     * @return Varien_Object|false
      */
     public function reserve()
     {
@@ -149,39 +162,20 @@ class Pulchritudinous_Queue_Model_Queue
             $running[$identity] = null;
         }
 
-        $batch              = false;
-        $messageCollection  = new Varien_Data_Collection();
-
         foreach ($queueCollection as $labour) {
             $config     = $configModel->getWorkerConfig($labour->getWorker());
             $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
-            if ($batch == false) {
-                if ($config->getRule() == 'batch') {
-                    $batch = $labour->getWorker();
-                }
-
-                if ($config->getRule() == 'run') {
-                    return $this->_beforeReturn($labour);
-                }
-
-                if ($config->getRule() == 'wait') {
-                    if (isset($running[$identity])) {
-                        continue;
-                    }
-
-                    return $this->_beforeReturn($labour);
+            if ($config->getRule() == 'wait') {
+                if (isset($running[$identity])) {
+                    continue;
                 }
             }
 
-            if ($labour->getWorker() != $batch) {
-                continue;
-            }
-
-            $messageCollection->addItem($labour);
+            return $labour;
         }
 
-        return $this->_beforeReturn($messageCollection);
+        return false;
     }
 
     /**
@@ -221,51 +215,20 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      *
      *
-     * @param  Varien_Data_Collection|Pulchritudinous_Queue_Model_Labour
+     * @param  Pulchritudinous_Queue_Model_Labour
      *
-     * @return Varien_Data_Collection|Pulchritudinous_Queue_Model_Labour
+     * @return Pulchritudinous_Queue_Model_Labour
      */
-    protected function _beforeReturn($object)
+    public function finish($labour)
     {
         $data = [
-            'status'        => 'running',
-            'pid'           => 123,
-            'started_at'    => now(),
+            'status'        => 'finished',
+            'finished_at'   => now(),
         ];
 
-        if ($object instanceof Varien_Data_Collection) {
-            $transaction = Mage::getModel('core/resource_transaction');
+        $labour->addData($data)->save();
 
-            foreach ($object as $obj) {
-                $obj->addData($data);
-                $transaction->addObject($obj);
-            }
-
-            if ($object->count()) {
-                $transaction->save();
-            }
-        } else {
-            $object->addData($data)->save();
-        }
-
-
-        return $object;
-    }
-
-    /**
-     * Delete a job from the queue.
-     *
-     * @param Varien_Object $job
-     *
-     * @return boolean
-     */
-    public function delete($job)
-    {
-        $this->_getCollection()->deleteOne(
-            [
-                '_id'  => $job->getData('_id'),
-            ]
-        );
+        return $labour;
     }
 
     /**
@@ -282,22 +245,10 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($labour->getWorker());
-        $time           = time();
-        $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
-
-        if ($delay !== false) {
-            if (is_numeric($delay)) {
-                $when = date('Y-m-d H:i:s', $time + $delay);
-            } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString('Y-m-d H:i:s');
-            } elseif (is_numeric($config->getDelay())) {
-                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
-            }
-        }
 
         $labour
             ->setStatus('pending')
-            ->setExecuteAt($when)
+            ->setExecuteAt($this->_getWhen($config, $delay))
             ->save();
 
         return true;

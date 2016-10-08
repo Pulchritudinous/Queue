@@ -70,8 +70,10 @@
         </blocks>
         <pulchqueue>
             <queue>
+                <!-- Number of simultaneous processes -->
                 <threads>2</threads>
-                <poll>200</poll>
+                <!-- Delay between each queue retrieval -->
+                <poll>2</poll>
             </queue>
             <worker>
                 <retries>1</retries>

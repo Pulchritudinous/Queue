@@ -37,7 +37,9 @@ class Pulchritudinous_Queue_Shell
     {
         $this->_parseArgs();
 
-        register_shutdown_function([$this, 'exitStrategy']);
+        if (!$this->getArg('labour')) {
+            register_shutdown_function([$this, 'exitStrategy']);
+        }
 
         if ($this->_includeMage) {
             require_once $this->_getRootPath() . 'app' . DIRECTORY_SEPARATOR . 'Mage.php';
@@ -79,6 +81,11 @@ class Pulchritudinous_Queue_Shell
             $labour = Mage::getModel('pulchqueue/labour')->load($id);
             $labour->execute();
         } catch (Exception $e) {
+            if ($labour &&  $labour->getId()) {
+                $labour->setStatus('failed')->save();
+            }
+
+            Mage::logException($e);
             exit(1);
         }
 
@@ -94,36 +101,49 @@ class Pulchritudinous_Queue_Shell
         $binfile        = (isset($_SERVER['_'])) ? $_SERVER['_'] : 'php';
         $shellfile      = $this->_shellFile;
         $cwd            = sys_get_temp_dir();
+        $logDir         = Mage::getBaseDir('var') . DS . 'log';
+        $errorFile      = $logDir . DS . Mage::getStoreConfig('dev/log/exception_file');
         $queue          = Mage::getSingleton('pulchqueue/queue');
         $configModel    = Mage::getSingleton('pulchqueue/config');
         $configData     = new Varien_Object(
-            Mage::getConfig()->getNode('global/pulchqueue')->asArray()
+            Mage::getConfig()->getNode('global/pulchqueue/queue')->asArray()
         );
-        $spec           = [
-           ['pipe', 'r'],
-           ['pipe', 'w'],
-           ['pipe', 'w']
-       ];
 
         self::$configData   = $configData;
         self::$processes    = new Varien_Data_Collection();
 
         while (true) {
-            $this->_validateProcesses();
+            self::validateProcesses();
 
             $processes = self::$processes;
 
             if (!$this->_canStartNext()) {
-                usleep($configData->getData('queue/poll'));
+                sleep($configData->getPoll());
                 continue;
             }
 
-            $labour     = $queue->reserve();
-            $command    = "{$binfile} {$shellfile} --labour {$labour->getId()}";
-            $resource   = proc_open($command, $spec, $pipes, $cwd);
-            $status     = proc_get_status($resource);
+            $labour = $queue->reserve();
 
-            if ($status && $status['running']) {
+            if ($labour === false) {
+                sleep($configData->getPoll());
+                continue;
+            }
+
+            $spec = [
+               ['pipe', 'r'],
+               ['pipe', 'w'],
+               ['file', $errorFile, 'a']
+            ];
+
+            $command    = "{$binfile} {$shellfile} --labour {$labour->getId()}";
+            $resource   = proc_open($command, $spec, $pipes, $cwd, null);
+
+            stream_set_blocking($pipes[0], 0);
+            stream_set_blocking($pipes[1], 0);
+
+            if (self::validateProcess($resource)) {
+                $status = proc_get_status($resource);
+
                 $processes->addItem(
                     new Varien_Object([
                         'id'        => $status['pid'],
@@ -132,7 +152,7 @@ class Pulchritudinous_Queue_Shell
                 );
             }
 
-            usleep($configData->getData('queue/poll'));
+            sleep($configData->getPoll());
         }
 
         exit(0);
@@ -143,17 +163,16 @@ class Pulchritudinous_Queue_Shell
      *
      * @return Pulchritudinous_Queue_Shell
      */
-    protected function _validateProcesses()
+    public static function validateProcesses()
     {
         $processes = self::$processes;
 
         foreach ($processes as $process) {
-            if (!$this->_validateProcess($process->getResource())) {
-                $process->removeItemByKey($process->getId());
+            if (!self::validateProcess($process->getResource())) {
+                proc_close($process->getResource());
+                $processes->removeItemByKey($process->getId());
             }
         }
-
-        return $this;
     }
 
     /**
@@ -163,7 +182,7 @@ class Pulchritudinous_Queue_Shell
      *
      * @return boolean
      */
-    protected function _validateProcess($resource)
+    public static function validateProcess($resource)
     {
         $status = proc_get_status($resource);
 
@@ -177,7 +196,10 @@ class Pulchritudinous_Queue_Shell
      */
     protected function _canStartNext()
     {
-        if (count($this->_processes) < 4) {
+        $configData = self::$configData;
+        $processes  = self::$processes;
+
+        if ($processes->count() < $configData->getThreads()) {
             return true;
         }
 
@@ -185,11 +207,27 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     * Run state.
+     *
      */
     public static function exitStrategy()
     {
-        echo 'Hello World!';
+        $configData = self::$configData;
+        $processes  = self::$processes;
+
+        $configData->setThreads(0);
+
+        echo "Closing open processes\n";
+
+        while (true) {
+            if ($processes->count() < $configData->getThreads()) {
+                break;
+            }
+
+            self::validateProcesses();
+            usleep(500);
+        }
+
+        echo "Finished!\n";
     }
 
     /**
