@@ -61,13 +61,62 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function execute()
     {
-        $data = [
+        try {
+            $this->_beforeExecute();
+        } catch (Exception $e) {
+            Mage::logException($e);
+        }
+    }
+
+    /**
+     *
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _beforeExecute()
+    {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfig($this->getWorker());
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
             'status'        => 'running',
             'started_at'    => now(),
-            'pid'           => getmypid,
         ];
 
-        $labour->addData($data)->save();
+        if ($config->getRule() == 'batch') {
+            $queueCollection = $this->_getBatchCollection()
+                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
+                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+
+            $this->setChildLabour($queueCollection);
+
+            foreach ($queueCollection as $bundle) {
+                if ($bundle->getId() != $this->getId()) {
+                    $bundle->addData($data);
+
+                    $transaction->addObject($bundle);
+                }
+            }
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
+    }
+
+    /**
+     *
+     *
+     * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
+     */
+    protected function _getBatchCollection()
+    {
+        return Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('parent_id', ['eq' => $this->getId()]);
     }
 }
 

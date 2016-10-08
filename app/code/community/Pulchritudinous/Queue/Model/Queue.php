@@ -149,12 +149,7 @@ class Pulchritudinous_Queue_Model_Queue
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
         $runningCollection  = $this->getRunning();
-        $queueCollection    = Mage::getModel('pulchqueue/labour')
-            ->getCollection()
-            ->addFieldToFilter('status', ['eq' => 'pending'])
-            ->addFieldToFilter('execute_at', ['lteq' => now()])
-            ->setOrder('priority', 'ASC')
-            ->setOrder('created_at', 'ASC');
+        $queueCollection    = $this->_getQueueCollection();
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
@@ -172,10 +167,69 @@ class Pulchritudinous_Queue_Model_Queue
                 }
             }
 
-            return $labour;
+            return $this->_beforeReserve($labour, $config);
         }
 
         return false;
+    }
+
+    /**
+     *
+     *
+     * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
+     */
+    protected function _getQueueCollection()
+    {
+        return Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('status', ['eq' => 'pending'])
+            ->addFieldToFilter('execute_at', ['lteq' => now()])
+            ->setOrder('priority', 'ASC')
+            ->setOrder('created_at', 'ASC');
+    }
+
+    /**
+     *
+     *
+     * @param  Pulchritudinous_Queue_Model_Labour $labour
+     * @param  Varien_Object                      $config
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _beforeReserve(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
+    {
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status' => 'deployed',
+        ];
+
+        if ($config->getRule() == 'batch') {
+            $queueCollection = $this->_getQueueCollection()
+                ->addFieldToFilter('identity', ['eq' => $labour->getIdentity()])
+                ->addFieldToFilter('worker', ['eq' => $labour->getWorker()]);
+
+            foreach ($queueCollection as $bundle) {
+                if ($bundle->getId() != $labour->getId()) {
+                    $bundle->addData(
+                        array_merge(
+                            $data,
+                            [
+                                'parent_id' => $labour->getId(),
+                            ]
+                        )
+                    );
+
+                    $transaction->addObject($bundle);
+                }
+            }
+        }
+
+        $labour->addData($data);
+
+        $transaction->addObject($labour);
+        $transaction->save();
+
+        return $labour;
     }
 
     /**

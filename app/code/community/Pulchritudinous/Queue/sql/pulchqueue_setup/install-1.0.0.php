@@ -19,6 +19,16 @@ $table = $this->getConnection()
         'ID'
     )
     ->addColumn(
+        'parent_id',
+        Varien_Db_Ddl_Table::TYPE_INTEGER,
+        null,
+        [
+            'unsigned'  => true,
+            'nullable'  => true,
+        ],
+        'Parent ID'
+    )
+    ->addColumn(
         'worker',
         Varien_Db_Ddl_Table::TYPE_TEXT,
         255,
@@ -130,6 +140,26 @@ $table = $this->getConnection()
             'nullable'  => true,
         ],
         'Updated At'
+    )
+    ->addIndex(
+        $this->getIdxName(
+            $tableName,
+            ['parent_id']
+        ),
+        ['parent_id']
+    )
+    ->addForeignKey(
+        $this->getFkName(
+            $tableName,
+            'parent_id',
+            'pulchqueue/labour',
+            'id'
+        ),
+        'parent_id',
+        $this->getTable('pulchqueue/labour'),
+        'id',
+        Varien_Db_Ddl_Table::ACTION_CASCADE,
+        Varien_Db_Ddl_Table::ACTION_CASCADE
     )
     ->setComment('Worker Queue');
 

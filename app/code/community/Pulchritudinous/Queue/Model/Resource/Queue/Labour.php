@@ -105,6 +105,37 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     /**
      *
      *
+     * @param  Pulchritudinous_Queue_Model_Labour $labour
+     * @param  string                             $field
+     * @param  string                             $value
+     *
+     * @return boolean
+     */
+    public function updateField(Pulchritudinous_Queue_Model_Labour $labour, $field, $value)
+    {
+        $adapter    = $this->_getWriteAdapter();
+        $data       = [
+            $field => $value,
+        ];
+
+        $result = $adapter->update(
+            $this->getMainTable(),
+            $data,
+            [
+                'id'  => $labour->getId(),
+            ]
+        );
+
+        if ($result) {
+            $labour->setData($field, $value);
+        }
+
+        return $result;
+    }
+
+    /**
+     *
+     *
      * @param  string $worker
      * @param  string $identity
      *

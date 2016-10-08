@@ -81,11 +81,6 @@ class Pulchritudinous_Queue_Shell
             $labour = Mage::getModel('pulchqueue/labour')->load($id);
             $labour->execute();
         } catch (Exception $e) {
-            if ($labour &&  $labour->getId()) {
-                $labour->setStatus('failed')->save();
-            }
-
-            Mage::logException($e);
             exit(1);
         }
 
@@ -144,12 +139,15 @@ class Pulchritudinous_Queue_Shell
             if (self::validateProcess($resource)) {
                 $status = proc_get_status($resource);
 
+                $labour->getResource()->updateField($labour, 'pid', $status['pid']);
+
                 $processes->addItem(
                     new Varien_Object([
                         'id'        => $status['pid'],
                         'resource'  => $resource,
                     ])
                 );
+
             }
 
             sleep($configData->getPoll());
