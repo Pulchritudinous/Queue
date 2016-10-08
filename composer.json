@@ -20,7 +20,7 @@
             [
                 "app/code/community/Pulchritudinous/Queue/",
                 "app/code/community/Pulchritudinous/Queue/"
-            ]
+            ],
             [
                 "shell/queue.php",
                 "shell/queue.php"
