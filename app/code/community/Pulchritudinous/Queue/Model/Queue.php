@@ -86,7 +86,7 @@ class Pulchritudinous_Queue_Model_Queue
     }
 
     /**
-     *
+     * Parses when the labour should be executed.
      *
      * @param  Varien_Object           $config
      * @param  false|integer|Zend_Date $delay
@@ -167,14 +167,14 @@ class Pulchritudinous_Queue_Model_Queue
                 }
             }
 
-            return $this->_beforeReserve($labour, $config);
+            return $this->_beforeReturn($labour, $config);
         }
 
         return false;
     }
 
     /**
-     *
+     * Get queued labour collection.
      *
      * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
      */
@@ -182,25 +182,25 @@ class Pulchritudinous_Queue_Model_Queue
     {
         return Mage::getModel('pulchqueue/labour')
             ->getCollection()
-            ->addFieldToFilter('status', ['eq' => 'pending'])
+            ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
             ->addFieldToFilter('execute_at', ['lteq' => now()])
             ->setOrder('priority', 'ASC')
             ->setOrder('created_at', 'ASC');
     }
 
     /**
-     *
+     * Before labour is returned.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
      * @param  Varien_Object                      $config
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
-    protected function _beforeReserve(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
+    protected function _beforeReturn(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
     {
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
-            'status' => 'deployed',
+            'status' => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
         ];
 
         if ($config->getRule() == 'batch') {
@@ -233,7 +233,7 @@ class Pulchritudinous_Queue_Model_Queue
     }
 
     /**
-     *
+     * Get all running labours.
      *
      * @return Varien_Data_Collection|Varien_Object
      */
@@ -251,7 +251,7 @@ class Pulchritudinous_Queue_Model_Queue
                 $hasUnknown = true;
 
                 $labour->setFinishedAt(now());
-                $labour->setStatus('unknown');
+                $labour->setStatus(Pulchritudinous_Queue_Model_Labour::STATUS_UNKNOWN);
 
                 $transaction->addObject($labour);
 
@@ -267,7 +267,7 @@ class Pulchritudinous_Queue_Model_Queue
     }
 
     /**
-     *
+     * Mark labour as finished.
      *
      * @param  Pulchritudinous_Queue_Model_Labour
      *
@@ -276,7 +276,7 @@ class Pulchritudinous_Queue_Model_Queue
     public function finish($labour)
     {
         $data = [
-            'status'        => 'finished',
+            'status'        => Pulchritudinous_Queue_Model_Labour::STATUS_FINISHED,
             'finished_at'   => now(),
         ];
 
@@ -286,7 +286,7 @@ class Pulchritudinous_Queue_Model_Queue
     }
 
     /**
-     * Reschedule a job to be run at a later time.
+     * Reschedule labour to be run at a later time.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
      * @param  false|integer|Zend_Date            $delay
@@ -301,7 +301,8 @@ class Pulchritudinous_Queue_Model_Queue
         $config         = $configModel->getWorkerConfig($labour->getWorker());
 
         $labour
-            ->setStatus('pending')
+            ->setStatus(Pulchritudinous_Queue_Model_Labour::STATUS_PENDING)
+            ->setRetries((int) $labour->getRetries() + 1)
             ->setExecuteAt($this->_getWhen($config, $delay))
             ->save();
 

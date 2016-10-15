@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Queue and labour configuration model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */

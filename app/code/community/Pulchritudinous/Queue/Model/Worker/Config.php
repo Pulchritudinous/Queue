@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Worker configuration model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -62,7 +62,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
     }
 
     /**
-     *
+     * Load worker model.
      *
      * @param  Varien_Object $config
      *

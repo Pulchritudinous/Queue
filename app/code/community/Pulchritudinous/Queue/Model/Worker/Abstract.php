@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Abstract worker model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */

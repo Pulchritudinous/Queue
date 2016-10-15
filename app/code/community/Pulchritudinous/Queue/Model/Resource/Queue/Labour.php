@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Labour resources model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -41,7 +41,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     }
 
     /**
-     *
+     * Load labour by worker code and identity.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
      * @param  string                             $worker
@@ -73,7 +73,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     }
 
     /**
-     *
+     * Set status to a unprocessed labour by worker and identity.
      *
      * @param  string $status
      * @param  string $worker
@@ -95,7 +95,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             $this->getMainTable(),
             $data,
             [
-                'running'  => false,
+                'status = ?'  => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING,
             ]
         );
 
@@ -103,7 +103,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     }
 
     /**
-     *
+     * Update single field to labour.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
      * @param  string                             $field
@@ -122,7 +122,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             $this->getMainTable(),
             $data,
             [
-                'id'  => $labour->getId(),
+                'id' => $labour->getId(),
             ]
         );
 
@@ -134,7 +134,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     }
 
     /**
-     *
+     * Checks if labour exists in queue by worker code and identity.
      *
      * @param  string $worker
      * @param  string $identity
@@ -161,7 +161,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     }
 
     /**
-     * Prepare data for save
+     * Prepare data for save.
      *
      * @param Mage_Core_Model_Abstract $object
      *
@@ -173,6 +173,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             $object->setCreatedAt(now());
         }
 
+        $object->unsetData('pid');
         $object->setUpdatedAt(now());
 
         return parent::_prepareDataForSave($object);

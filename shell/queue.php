@@ -2,7 +2,7 @@
 require_once 'abstract.php';
 
 /**
- *
+ * Shell for handling queue and labour execution.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -10,7 +10,7 @@ class Pulchritudinous_Queue_Shell
     extends Mage_Shell_Abstract
 {
     /**
-     *
+     * Shell file location.
      *
      * @var string
      */
@@ -24,7 +24,7 @@ class Pulchritudinous_Queue_Shell
     public static $processes;
 
     /**
-     *
+     * Server configuration.
      *
      * @var Varien_Object
      */
@@ -73,7 +73,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Run labour.
      */
     protected function _runLabour($id)
     {
@@ -88,7 +88,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Run server.
      */
     protected function _runServer()
     {
@@ -157,7 +157,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Validate all labour processes.
      *
      * @return Pulchritudinous_Queue_Shell
      */
@@ -174,7 +174,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Validate single labour processes.
      *
      * @param  resource $resource
      *
@@ -188,7 +188,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Check if it is possible to start next labour process.
      *
      * @return boolean
      */
@@ -205,7 +205,7 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     *
+     * Make sure all labours is finished before closing the server.
      */
     public static function exitStrategy()
     {
@@ -238,7 +238,7 @@ class Pulchritudinous_Queue_Shell
         return <<<USAGE
 Usage:
     php queue.php [options]
-        --help          Print this help.
+        --help          Shows this help.
 
 USAGE;
     }

@@ -25,13 +25,55 @@
 ?>
 <?php
 /**
- *
+ * Labour model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Labour
     extends Mage_Core_Model_Abstract
 {
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_PENDING    = 'pending';
+
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_RUNNING    = 'running';
+
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_DEPLOYED   = 'deployed';
+
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_FAILED     = 'failed';
+
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_UNKNOWN   = 'unknown';
+
+    /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_FINISHED   = 'finished';
+
     /**
      * Initial configuration.
      */
@@ -41,7 +83,7 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     *
+     * Load labour by worker code and identity.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
      * @param  string                             $worker
@@ -49,7 +91,7 @@ class Pulchritudinous_Queue_Model_Labour
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
-    public function loadByWorkerIdentity($worker, $identity)
+    public function loadByWorkerIdentity($worker, $identity = '')
     {
         $this->getResource()->loadByWorkerIdentity($this, $worker, $identity);
 
@@ -57,7 +99,7 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     *
+     * Execute labour.
      */
     public function execute()
     {
@@ -69,7 +111,7 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     *
+     * Mark labour as started.
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
@@ -79,7 +121,7 @@ class Pulchritudinous_Queue_Model_Labour
         $config         = $configModel->getWorkerConfig($this->getWorker());
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
-            'status'        => 'running',
+            'status'        => self::STATUS_RUNNING,
             'started_at'    => now(),
         ];
 
@@ -108,7 +150,7 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     *
+     * Get batched labour collection.
      *
      * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
      */

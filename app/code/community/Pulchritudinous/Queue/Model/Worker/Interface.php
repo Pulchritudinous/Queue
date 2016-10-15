@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Worker interface.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */

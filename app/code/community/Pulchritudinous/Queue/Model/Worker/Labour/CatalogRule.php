@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Catalog Rule indexer worker.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */

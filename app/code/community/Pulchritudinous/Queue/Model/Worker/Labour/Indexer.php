@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Indexer worker.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */

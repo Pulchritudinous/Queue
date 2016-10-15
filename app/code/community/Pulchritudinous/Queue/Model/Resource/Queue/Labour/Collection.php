@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Labour resource collection model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
