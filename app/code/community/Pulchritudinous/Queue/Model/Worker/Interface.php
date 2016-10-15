@@ -31,5 +31,9 @@
  */
 interface Pulchritudinous_Queue_Model_Worker_Interface
 {
+    /**
+     * Execute worker.
+     */
+    public function execute();
 }
 

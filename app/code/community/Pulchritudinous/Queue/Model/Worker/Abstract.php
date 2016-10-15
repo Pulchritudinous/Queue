@@ -33,5 +33,46 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
     extends Varien_Object
     implements Pulchritudinous_Queue_Model_Worker_Interface
 {
+    /**
+     * Labour model.
+     *
+     * @var Pulchritudinous_Queue_Model_Labour
+     */
+    protected $_labour;
+
+    /**
+     * Config model.
+     *
+     * @var Varien_Object
+     */
+    protected $_config;
+
+    /**
+     * Set labour model to worker.
+     *
+     * @param  Pulchritudinous_Queue_Model_Labour $labour
+     *
+     * @return Pulchritudinous_Queue_Model_Worker_Abstract
+     */
+    public function setLabour(Pulchritudinous_Queue_Model_Labour $labour)
+    {
+        $this->_labour = $this;
+
+        return $this;
+    }
+
+    /**
+     * Set labour model to worker.
+     *
+     * @param  Varien_Object $config
+     *
+     * @return Pulchritudinous_Queue_Model_Worker_Abstract
+     */
+    public function setConfig(Varien_Object $config)
+    {
+        $this->_labour = $this;
+
+        return $this;
+    }
 }
 

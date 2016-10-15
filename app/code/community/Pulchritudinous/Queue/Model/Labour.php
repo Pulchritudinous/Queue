@@ -37,42 +37,49 @@ class Pulchritudinous_Queue_Model_Labour
      *
      * @var string
      */
-    const STATUS_PENDING    = 'pending';
+    const STATUS_PENDING        = 'pending';
 
     /**
      * Labour status.
      *
      * @var string
      */
-    const STATUS_RUNNING    = 'running';
+    const STATUS_RUNNING        = 'running';
 
     /**
      * Labour status.
      *
      * @var string
      */
-    const STATUS_DEPLOYED   = 'deployed';
+    const STATUS_DEPLOYED       = 'deployed';
 
     /**
      * Labour status.
      *
      * @var string
      */
-    const STATUS_FAILED     = 'failed';
+    const STATUS_FAILED         = 'failed';
 
     /**
      * Labour status.
      *
      * @var string
      */
-    const STATUS_UNKNOWN   = 'unknown';
+    const STATUS_UNKNOWN        = 'unknown';
 
     /**
      * Labour status.
      *
      * @var string
      */
-    const STATUS_FINISHED   = 'finished';
+    const STATUS_FINISHED       = 'finished';
+
+    /**
+     * Worker configuration.
+     *
+     * @return false|Varien_Object
+     */
+    protected $_workerConfig    = false;
 
     /**
      * Initial configuration.
@@ -104,10 +111,77 @@ class Pulchritudinous_Queue_Model_Labour
     public function execute()
     {
         try {
+            if (!($this->_workerConfig instanceof Varien_Object)) {
+                $this->_setAsFailed();
+
+                Mage::throwException(
+                    "Unable to execute labour with ID {$labour->getId()} and worker code {$this->getWorker()}"
+                );
+            }
+
             $this->_beforeExecute();
+            $this->_execute();
         } catch (Exception $e) {
             Mage::logException($e);
         }
+    }
+
+    /**
+     * Execute labour.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _execute()
+    {
+        $config = $this->_workerConfig;
+        $model  = $this->getWorkderModel();
+
+        $model
+            ->setLabour($this)
+            ->setConfig($config)
+            ->execute();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as failed.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _setAsFailed()
+    {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfig($this->getWorker());
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status'        => self::STATUS_FAILED,
+            'started_at'    => now(),
+            'finished_at'   => now(),
+        ];
+
+        if ($config->getRule() == 'batch') {
+            $queueCollection = $this->_getBatchCollection()
+                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
+                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+
+            $this->setChildLabour($queueCollection);
+
+            foreach ($queueCollection as $bundle) {
+                if ($bundle->getId() != $this->getId()) {
+                    $bundle->addData($data);
+
+                    $transaction->addObject($bundle);
+                }
+            }
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
     }
 
     /**
@@ -159,6 +233,19 @@ class Pulchritudinous_Queue_Model_Labour
         return Mage::getModel('pulchqueue/labour')
             ->getCollection()
             ->addFieldToFilter('parent_id', ['eq' => $this->getId()]);
+    }
+
+    /**
+     * Add worker configuration after data is loaded.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _afterLoad()
+    {
+        $this->_workerConfig = Mage::getSingleton('pulchqueue/worker_config')
+            ->getWorkerConfig($this->getWorker());
+
+        return parent::_afterLoad();
     }
 }
 

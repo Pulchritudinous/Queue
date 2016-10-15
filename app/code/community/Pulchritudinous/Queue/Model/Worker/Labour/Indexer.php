@@ -32,5 +32,12 @@
 class Pulchritudinous_Queue_Model_Worker_Labour_Indexer
     extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
+    /**
+     * Execute worker.
+     */
+    public function execute()
+    {
+        return $this;
+    }
 }
 
