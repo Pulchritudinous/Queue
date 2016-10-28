@@ -34,17 +34,21 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Add a job to the queue that will be asynchronously handled by a worker.
      *
-     * @param  string                  $worker
-     * @param  array                   $payload
-     * @param  string                  $identity
-     * @param  false|integer|Zend_Date $delay
+     * @param  string   $worker
+     * @param  array    $payload
+     * @param  array    $options
      *
      * @return boolean
      *
      * @throws Mage_Core_Exception
      */
-    public function add(string $worker, array $payload = [], $identity = '', $delay = false)
+    public function add(string $worker, array $payload = [], $options = [])
     {
+        $options = array_intersect_key($options, array_flip(
+                ['identity', 'delay']
+            )
+        );
+
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
 
@@ -52,14 +56,23 @@ class Pulchritudinous_Queue_Model_Queue
             Mage::throwException("Unable to find worker with name {$worker}");
         }
 
-        if (!is_string($identity)) {
+        $options = $this->_getOptions($options, $config);
+
+        if (!is_string($options->getIdentity())) {
             Mage::throwException('Identity needs to be of type string');
+        }
+
+        if ($options->getDelay()) {
+            $options->setExecuteAt(
+                $this->_getWhen($config, $options->getDelay())
+            );
+            $options->unsDelay();
         }
 
         if ($config->getRule() == 'ignore') {
             $hasLabour = $this->getResource()->hasUnprocessedWorkerIdentity(
                 $worker,
-                $identity
+                $options->getIdentity()
             );
 
             if ($hasLabour == true) {
@@ -69,20 +82,49 @@ class Pulchritudinous_Queue_Model_Queue
             $this->getResource()->setStatusOnUnprocessedByWorkerIdentity(
                 'replaced',
                 $worker,
-                $identity
+                $options->getIdentity()
             );
         }
 
         Mage::getModel('pulchqueue/labour')
             ->setWorker($worker)
-            ->setIdentity($identity)
-            ->setPriority($config->getPriority())
+            ->addData($options->getData())
             ->setPayload(serialize($this->_validateArrayData($payload)))
             ->setStatus('pending')
-            ->setExecuteAt($this->_getWhen($config, $delay))
             ->save();
 
         return true;
+    }
+
+    /**
+     *
+     *
+     * @param  array         $options
+     * @param  Varien_Object $config
+     *
+     * @return Varien_Object
+     */
+    protected function _getOptions($options, $config)
+    {
+        $allowed = [
+            'identity',
+            'priority',
+            'retries',
+            'delay',
+            'execute_at',
+        ];
+
+        $options = array_intersect_key(
+            $options,
+            array_flip($allowed)
+        );
+
+        $mergedOptions = array_merge(
+            $config->getData(),
+            $options
+        );
+
+        return new Varien_Object($options);
     }
 
     /**
@@ -309,4 +351,5 @@ class Pulchritudinous_Queue_Model_Queue
         return true;
     }
 }
+
 
