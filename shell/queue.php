@@ -313,7 +313,7 @@ class Pulchritudinous_Queue_Shell
 
         echo "Closing open processes\n";
 
-        while (true) {
+        while ($processes->count()) {
             if ($processes->count() < $configData->getThreads()) {
                 break;
             }
