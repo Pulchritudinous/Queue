@@ -36,6 +36,9 @@
                 <priority>100</priority>
                 <class>pulchqueue/worker_labour_catalogRule</class>
                 <rule>wait</rule>
+                <recurring>
+                    <pattern>*/1 * * * *</pattern>
+                </recurring>
             </apply_catalog_rules>
             <indexer>
                 <priority>50</priority>

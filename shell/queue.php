@@ -31,6 +31,13 @@ class Pulchritudinous_Queue_Shell
     public static $configData;
 
     /**
+     * Last time scheduling happened
+     *
+     * @param int
+     */
+    public static $lastSchedule;
+
+    /**
      * Initialize application and parse input parameters
      */
     public function __construct()
@@ -109,6 +116,7 @@ class Pulchritudinous_Queue_Shell
 
         while (true) {
             self::validateProcesses();
+            self::addRecurringJobs($configData);
 
             $processes = self::$processes;
 
@@ -171,6 +179,95 @@ class Pulchritudinous_Queue_Shell
                 $processes->removeItemByKey($process->getId());
             }
         }
+    }
+
+    public static function addRecurringJobs($config)
+    {
+        $recurringConfig = new Varien_Object(
+            Mage::getConfig()->getNode('global/pulchqueue/recurring')->asArray()
+        );
+
+        $last       = self::$lastSchedule;
+        $itsTime    = ($last + $recurringConfig->getPlanAheadMin() * 60) <= time();
+
+        if (!$itsTime) {
+            return;
+        }
+
+        self::$lastSchedule = time();
+
+        $workers    = Mage::getSingleton('pulchqueue/config')->getWorkers();
+
+        foreach ($workers as $worker) {
+            $rec = $worker->getRecurring();
+
+            if (!isset($rec['pattern'])) {
+                continue;
+            }
+
+            $pattern    = $rec['pattern'];
+            $runTimes   = self::generateRunDates($pattern);
+
+            if ($runTimes) {
+                $workerModel = Mage::getSingleton('pulchqueue/worker_config')
+                    ->loadWorkerClass($worker);
+
+                if (!$workerModel) {
+                    continue;
+                }
+
+                foreach ($runTimes as $date) {
+                    $opt        = new Varien_Object($worker->getWorkerModel()->getRecurringOptions());
+                    $options    = $opt->getOptions();
+                    ($payload = $opt->getPayload()) || ($payload = []);
+
+                    if (!$options) {
+                        $options = [];
+                    }
+
+                    $options['delay'] = $date;
+
+                    Mage::getModel('pulchqueue/queue')->add(
+                        (string)$worker->getWorkerName(),
+                        $payload,
+                        $options
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Generate date times to run job at
+     *
+     * @param string $pattern
+     *
+     * @return array
+     */
+    public static function generateRunDates($pattern)
+    {
+        $recurringConfig = new Varien_Object(
+            Mage::getConfig()->getNode('global/pulchqueue/recurring')->asArray()
+        );
+
+        $scheduler  = Mage::getModel('cron/schedule');
+        $time       = time();
+        $timeAhead  = $time + $recurringConfig->getPlanAheadMin() * 60;
+        $interval   = $recurringConfig->getPlanningResolution() * 60;
+
+        $scheduler->setCronExpr($pattern);
+
+        $runTimes = [];
+
+        for ($time; $time < $timeAhead; $time += $interval) {
+            $shouldAdd = $scheduler->trySchedule($time);
+            if ($shouldAdd) {
+                $date = new Zend_Date($time, Zend_Date::TIMESTAMP);
+                $runTimes[] = $date;
+            }
+        }
+
+        return $runTimes;
     }
 
     /**

@@ -75,6 +75,10 @@
                 <!-- Delay between each queue retrieval -->
                 <poll>2</poll>
             </queue>
+            <recurring>
+                <plan_ahead_min>10</plan_ahead_min>
+                <planning_resolution>1</planning_resolution>
+            </recurring>
             <worker>
                 <retries>1</retries>
                 <delay>0</delay>

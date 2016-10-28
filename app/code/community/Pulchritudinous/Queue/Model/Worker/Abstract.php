@@ -74,5 +74,23 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
 
         return $this;
     }
+
+    /**
+     * Returns options to pass to $queue->add() function when scheduling
+     * recurring jobs.
+     *
+     * Expected format:
+     * [
+     *      "payload" => [...],
+     *      "options" => [...]
+     * ]
+     * @see Pulchritudinous_Queue_Model_Queue::add()
+     *
+     * @return array
+     */
+    public function getRecurringOptions()
+    {
+        return [];
+    }
 }
 
