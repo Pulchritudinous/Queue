@@ -54,7 +54,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
             )
         );
 
-        if (!$this->_loadWorkerClass($config)) {
+        if (!$this->loadWorkerClass($config)) {
             return false;
         }
 
@@ -68,7 +68,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
      *
      * @return boolean
      */
-    protected function _loadWorkerClass($config)
+    public function loadWorkerClass($config)
     {
         $class  = $config->getClass();
         $object = Mage::getSingleton($class);
