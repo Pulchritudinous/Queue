@@ -32,5 +32,6 @@
 class Pulchritudinous_Queue_Model_Worker_Labour_CatalogRule
     extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
+    public function execute() {}
 }
 
