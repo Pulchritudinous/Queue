@@ -117,7 +117,7 @@ class Pulchritudinous_Queue_Shell
                 continue;
             }
 
-            $labour = $queue->reserve();
+            $labour = $queue->receive();
 
             if ($labour === false) {
                 sleep($configData->getPoll());

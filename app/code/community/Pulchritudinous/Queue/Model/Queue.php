@@ -144,7 +144,7 @@ class Pulchritudinous_Queue_Model_Queue
      *
      * @return Varien_Object|false
      */
-    public function reserve()
+    public function receive()
     {
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
