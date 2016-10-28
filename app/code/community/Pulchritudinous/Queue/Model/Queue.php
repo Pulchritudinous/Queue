@@ -42,13 +42,8 @@ class Pulchritudinous_Queue_Model_Queue
      *
      * @throws Mage_Core_Exception
      */
-    public function add(string $worker, array $payload = [], $options = [])
+    public function add($worker, array $payload = [], $options = [])
     {
-        $options = array_intersect_key($options, array_flip(
-                ['identity', 'delay']
-            )
-        );
-
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
 
@@ -58,7 +53,9 @@ class Pulchritudinous_Queue_Model_Queue
 
         $options = $this->_getOptions($options, $config);
 
-        if (!is_string($options->getIdentity())) {
+        ($identity = $options->getIdentity()) || ($identity = "");
+
+        if (!is_string($identity)) {
             Mage::throwException('Identity needs to be of type string');
         }
 
@@ -86,9 +83,11 @@ class Pulchritudinous_Queue_Model_Queue
             );
         }
 
-        Mage::getModel('pulchqueue/labour')
+
+        $apa = Mage::getModel('pulchqueue/labour')
             ->setWorker($worker)
             ->addData($options->getData())
+            ->setIdentity($identity)
             ->setPayload(serialize($this->_validateArrayData($payload)))
             ->setStatus('pending')
             ->save();
@@ -144,7 +143,7 @@ class Pulchritudinous_Queue_Model_Queue
             if (is_numeric($delay)) {
                 $when = date('Y-m-d H:i:s', $time + $delay);
             } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString('Y-m-d H:i:s');
+                $when = $delay->toString("Y-m-d H:mm:s");
             } elseif (is_numeric($config->getDelay())) {
                 $when = date('Y-m-d H:i:s', $time + $config->getDelay());
             }
