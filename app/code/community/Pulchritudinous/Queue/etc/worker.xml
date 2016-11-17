@@ -48,6 +48,7 @@
 
             <!-- Start adding test specific config -->
             <test_expected_exception>
+                <type>test</type>
                 <priority>500</priority>
                 <class>pulchqueue/worker_labour_test_exception</class>
             </test_expected_exception>
