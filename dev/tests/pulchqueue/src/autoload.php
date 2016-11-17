@@ -1,4 +1,6 @@
 <?php
+require_once '../vendor/autoload.php';
+
 // Include Magento libraries
 require_once realpath(MAGENTO_ROOT) . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'Mage.php';
 

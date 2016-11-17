@@ -1,0 +1,6 @@
+{
+    "require": {
+        "phpunit/php-invoker": "1.1.*"
+    }
+}
+
