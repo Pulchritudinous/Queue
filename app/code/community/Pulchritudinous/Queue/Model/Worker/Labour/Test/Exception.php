@@ -25,57 +25,22 @@
 ?>
 <?php
 /**
- * Queue test case.
+ *
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_QueueTest
-    extends PHPUnit_Framework_TestCase
+class Pulchritudinous_Queue_Model_Worker_Labour_Test_Exception
+    extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
     /**
-     * Initial setup.
-     */
-    public function setUp()
-    {
-        $this->_clearQueue();
-    }
-
-    /**
-     * Clear queue from all labours.
      *
-     * @return Pulchritudinous_Queue_Model_QueueTest
+     *
+     * @throws Mage_Core_Exception
      */
-    protected function _clearQueue()
+    public function execute()
     {
-        $resource   = Mage::getSingleton('core/resource');
-        $table      = $resource->getTableName('pulchqueue/labour');
-        $adapter    = $resource->getConnection('core_write');
-
-        $adapter->delete($table);
-
-        return $this;
-    }
-
-    /**
-     * Test if labour queue is empty.
-     */
-    public function testQueueIsEmpty()
-    {
-        $count = Mage::getModel('pulchqueue/labour')
-            ->getCollection()
-            ->getSize();
-
-        $this->assertEquals(0, $count);
-    }
-
-    /**
-     * Test if labour queue is empty.
-     */
-    public function testAddLabourToQueue()
-    {
-        $queue = Mage::getSingleton('pulchqueue/queue');
-
-        $queue->add('test_expected_exception');
+        Mage::throwException('Expected exception');
     }
 }
+
 

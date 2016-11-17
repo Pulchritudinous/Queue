@@ -45,6 +45,13 @@
                 <class>pulchqueue/worker_labour_indexer</class>
                 <rule>batch</rule>
             </indexer>
+
+            <!-- Start adding test specific config -->
+            <test_expected_exception>
+                <priority>500</priority>
+                <class>pulchqueue/worker_labour_test_exception</class>
+            </test_expected_exception>
+            <!-- End adding test specific config -->
         </worker>
         <worker_default>
             <priority>100</priority>
@@ -56,4 +63,5 @@
         </worker_default>
     </pulchqueue>
 </config>
+
 
