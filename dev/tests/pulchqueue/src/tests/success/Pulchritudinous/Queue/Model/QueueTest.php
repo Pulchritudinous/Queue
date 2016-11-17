@@ -37,8 +37,6 @@ class Pulchritudinous_Queue_Model_QueueTest
      */
     public function setUp()
     {
-        $app = Mage::app('default');
-
         $this->_clearQueue();
     }
 
