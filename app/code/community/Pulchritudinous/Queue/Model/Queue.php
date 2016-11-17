@@ -64,6 +64,10 @@ class Pulchritudinous_Queue_Model_Queue
                 $this->_getWhen($config, $options->getDelay())
             );
             $options->unsDelay();
+        } else {
+            $options->setExecuteAt(
+                $this->_getWhen($config)
+            );
         }
 
         if ($config->getRule() == 'ignore') {
