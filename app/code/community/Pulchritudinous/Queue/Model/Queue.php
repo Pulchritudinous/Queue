@@ -38,7 +38,7 @@ class Pulchritudinous_Queue_Model_Queue
      * @param  array    $payload
      * @param  array    $options
      *
-     * @return boolean
+     * @return Pulchritudinous_Queue_Model_Labour
      *
      * @throws Mage_Core_Exception
      */
@@ -83,8 +83,7 @@ class Pulchritudinous_Queue_Model_Queue
             );
         }
 
-
-        $apa = Mage::getModel('pulchqueue/labour')
+        $labour = Mage::getModel('pulchqueue/labour')
             ->setWorker($worker)
             ->addData($options->getData())
             ->setIdentity($identity)
@@ -92,7 +91,7 @@ class Pulchritudinous_Queue_Model_Queue
             ->setStatus('pending')
             ->save();
 
-        return true;
+        return $labour;
     }
 
     /**
@@ -350,5 +349,4 @@ class Pulchritudinous_Queue_Model_Queue
         return true;
     }
 }
-
 
