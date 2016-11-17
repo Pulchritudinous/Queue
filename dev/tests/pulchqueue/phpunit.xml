@@ -11,7 +11,7 @@
     syntaxCheck="true">
 
     <php>
-        <const name="MAGENTO_ROOT" value="/var/www/magento/axel/magento" />
+        <const name="MAGENTO_ROOT" value="../../../" />
     </php>
 
     <testsuites>
