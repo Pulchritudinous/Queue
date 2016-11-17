@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit bootstrap="src/autoload.php"
+    backupGlobals="false"
+    backupStaticAttributes="false"
+    colors="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    processIsolation="false"
+    stopOnFailure="false"
+    syntaxCheck="true">
+
+    <php>
+        <const name="MAGENTO_ROOT" value="/var/www/magento/axel/magento" />
+    </php>
+
+    <testsuites>
+        <testsuite name="Successful Pulchritudinous Queue Unit Test">
+            <directory>src/tests/success</directory>
+        </testsuite>
+        <testsuite name="Failing Pulchritudinous Queue Unit Test">
+            <directory>src/tests/fail</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
+

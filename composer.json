@@ -6,6 +6,10 @@
         {
             "name": "Anton Samuelsson",
             "email": "samuelsson.anton@gmail.com"
+        },
+        {
+            "name": "Manne Busk",
+            "email": "mannebusk@gmail.com"
         }
     ],
     "require": {
@@ -24,6 +28,10 @@
             [
                 "shell/queue.php",
                 "shell/queue.php"
+            ],
+            [
+                "dev/tests/pulchqueue/",
+                "dev/tests/pulchqueue/"
             ]
         ]
     }
