@@ -1,5 +1,5 @@
 <?php
-require_once '../vendor/autoload.php';
+require_once dirname(realpath(realpath(__FILE__)) . 'vendor') . DIRECTORY_SEPARATOR . 'autoload.php';
 
 // Include Magento libraries
 require_once realpath(MAGENTO_ROOT) . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'Mage.php';
@@ -11,6 +11,7 @@ if (!Mage::isInstalled()) {
 
 // Start the Magento application
 Mage::app('admin')->setUseSessionInUrl(false);
+Mage::setIsDeveloperMode(true);
 
 // Avoid issues "Headers already send"
 session_start();

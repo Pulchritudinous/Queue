@@ -69,6 +69,10 @@ class Pulchritudinous_Queue_Model_Config
                 continue;
             }
 
+            if (strtolower($config->getType()) == 'test' && !Mage::getIsDeveloperMode()) {
+                continue;
+            }
+
             $config->setRule(strtolower($config->getRule()));
             $config->setWorkerName($key);
 
