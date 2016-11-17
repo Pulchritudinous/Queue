@@ -50,7 +50,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
         $config->setData(
             array_merge(
                 $configModel->getWorkerDefaultConfig(),
-                $config->getData()
+                array_filter($config->getData())
             )
         );
 
