@@ -44,10 +44,9 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
 
         $this->assertRegExp('/\d+/', $config->getPriority(), 'Priority needs to be a integer');
         $this->assertNotEmpty($config->getRule(), 'Rule need to be defined');
-        $this->assertRegExp('/\d+/', $config->getDeplay(), 'Delay needs to be a integer');
+        $this->assertRegExp('/\d+/', $config->getDelay(), 'Delay needs to be a integer');
         $this->assertRegExp('/\d+/', $config->getRetries(), 'Retries needs to be a integer');
         $this->assertRegExp('/\d+/', $config->getReschedule(), 'Reschedule needs to be a integer');
     }
 }
-
 
