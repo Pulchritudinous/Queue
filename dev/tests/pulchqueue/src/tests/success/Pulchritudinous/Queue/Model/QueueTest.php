@@ -41,7 +41,7 @@ class Success_Pulchritudinous_Queue_Model_QueueTest
     }
 
     /**
-     * teardown setup.
+     * Tear-down setup.
      */
     public function tearDown()
     {
