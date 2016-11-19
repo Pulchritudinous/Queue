@@ -236,6 +236,22 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
+     * Get payload.
+     *
+     * @return array
+     */
+    public function getPayload()
+    {
+        $data = $this->getData('payload');
+
+        if (is_string($data)) {
+            $data = unserialize($data);
+        }
+
+        return $data;
+    }
+
+    /**
      * Add worker configuration after data is loaded.
      *
      * @return Pulchritudinous_Queue_Model_Labour
@@ -246,6 +262,20 @@ class Pulchritudinous_Queue_Model_Labour
             ->getWorkerConfig($this->getWorker());
 
         return parent::_afterLoad();
+    }
+
+    /**
+     * Add worker configuration after data is loaded.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _beforeSave()
+    {
+        if (is_array($this->getData('payload'))) {
+            $this->setPayload(serialize($this->getData('payload')));
+        }
+
+        return parent::_beforeSave();
     }
 }
 
