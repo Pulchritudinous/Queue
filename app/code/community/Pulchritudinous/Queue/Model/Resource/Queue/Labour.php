@@ -86,16 +86,16 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $adapter = $this->_getWriteAdapter();
 
         $data = [
-            'status'   => (string) $status,
-            'worker'   => (string) $worker,
-            'identity' => (string) $identity,
+            'status' => (string) $status,
         ];
 
         $result = $adapter->update(
             $this->getMainTable(),
             $data,
             [
-                'status = ?'  => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING,
+                'status = ?'    => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING,
+                'worker = ?'    => (string) $worker,
+                'identity = ?'  => (string) $identity,
             ]
         );
 
