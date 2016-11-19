@@ -54,7 +54,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $adapter = $this->_getReadAdapter();
 
         $select = $adapter->select()
-            ->from($this->getMainTable(), 'entity_id')
+            ->from($this->getMainTable())
             ->where('worker = :worker')
             ->where('identity = :identity');
 
@@ -63,7 +63,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             ':identity' => (string) $identity,
         ];
 
-        $result = $adapter->fetchOne($select, $bind);
+        $result = $adapter->fetchRow($select, $bind);
 
         if ($result) {
             $labour->setData($result);
