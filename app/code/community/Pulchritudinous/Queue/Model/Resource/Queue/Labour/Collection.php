@@ -39,5 +39,19 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
     {
         $this->_init('pulchqueue/labour');
     }
+
+    /**
+     * Apply data to labour.
+     *
+     * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
+     */
+    protected function _afterLoad()
+    {
+        foreach ($this as $labour) {
+            return $labour->applyWorkerConfig();
+        }
+
+        return $this;
+    }
 }
 

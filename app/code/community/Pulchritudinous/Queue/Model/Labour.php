@@ -112,8 +112,6 @@ class Pulchritudinous_Queue_Model_Labour
     {
         try {
             if (!($this->_workerConfig instanceof Varien_Object)) {
-                $this->_setAsFailed();
-
                 Mage::throwException(
                     "Unable to execute labour with ID {$labour->getId()} and worker code {$this->getWorker()}"
                 );
@@ -121,7 +119,10 @@ class Pulchritudinous_Queue_Model_Labour
 
             $this->_beforeExecute();
             $this->_execute();
+            $this->_afterExecute();
         } catch (Exception $e) {
+            $this->_setAsFailed();
+
             Mage::logException($e);
         }
     }
@@ -134,7 +135,7 @@ class Pulchritudinous_Queue_Model_Labour
     protected function _execute()
     {
         $config = $this->_workerConfig;
-        $model  = $this->getWorkderModel();
+        $model  = $config->getWorkerModel();
 
         $model
             ->setLabour($this)
@@ -161,7 +162,7 @@ class Pulchritudinous_Queue_Model_Labour
         ];
 
         if ($config->getRule() == 'batch') {
-            $queueCollection = $this->_getBatchCollection()
+            $queueCollection = $this->getBatchCollection()
                 ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
                 ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
 
@@ -200,7 +201,7 @@ class Pulchritudinous_Queue_Model_Labour
         ];
 
         if ($config->getRule() == 'batch') {
-            $queueCollection = $this->_getBatchCollection()
+            $queueCollection = $this->getBatchCollection()
                 ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
                 ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
 
@@ -224,11 +225,38 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
+     * Mark labour as finished.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _afterExecute()
+    {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status'        => self::STATUS_FINISHED,
+            'finished_at'   => now(),
+        ];
+
+        foreach ($this->getBatchCollection() as $bundle) {
+            $bundle->addData($data);
+            $transaction->addObject($bundle);
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
+    }
+
+    /**
      * Get batched labour collection.
      *
      * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
      */
-    protected function _getBatchCollection()
+    public function getBatchCollection()
     {
         return Mage::getModel('pulchqueue/labour')
             ->getCollection()
@@ -258,8 +286,7 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _afterLoad()
     {
-        $this->_workerConfig = Mage::getSingleton('pulchqueue/worker_config')
-            ->getWorkerConfig($this->getWorker());
+        $this->applyWorkerConfig();
 
         return parent::_afterLoad();
     }
@@ -276,6 +303,21 @@ class Pulchritudinous_Queue_Model_Labour
         }
 
         return parent::_beforeSave();
+    }
+
+    /**
+     * Apply worker configuration.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function applyWorkerConfig()
+    {
+        if (!$this->_workerConfig) {
+            $this->_workerConfig = Mage::getSingleton('pulchqueue/worker_config')
+                ->getWorkerConfig($this->getWorker());
+        }
+
+        return $this;
     }
 }
 
