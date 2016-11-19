@@ -226,5 +226,39 @@ class Pulchritudinous_Queue_Model_QueueTest
 
         $this->assertEquals(['id' => 3], $labour->getPayload(), 'Unexpected worker in received item');
     }
+
+    /**
+     * Test receiving labour based on priority.
+     */
+    public function testAddMixedLabourTypesAndPriorityToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_wait_work',    [], ['priority' => 999]);
+        $queue->add('test_successful_ignore_work',  [], ['priority' => 342]);
+        $queue->add('test_successful_replace_work', [], ['priority' => 123]);
+        $queue->add('test_successful_batch_work',   [], ['priority' => 525]);
+
+        $labour = $queue->receive();
+
+        $this->assertEquals('test_successful_replace_work', $labour->getWorker(), 'Unexpected worker code in received item');
+    }
+
+    /**
+     * Test receiving labour based on priority.
+     */
+    public function testAddMixedLabourTypesToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_ignore_work');
+        $queue->add('test_successful_replace_work');
+        $queue->add('test_successful_batch_work');
+
+        $labour = $queue->receive();
+
+        $this->assertEquals('test_successful_wait_work', $labour->getWorker(), 'Unexpected worker code in received item');
+    }
 }
 
