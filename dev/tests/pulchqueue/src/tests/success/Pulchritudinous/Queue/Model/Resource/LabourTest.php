@@ -104,7 +104,38 @@ class Success_Pulchritudinous_Queue_Model_Resource_LabourTest
         $resource->loadByWorkerIdentity($labour, 'test_successful_wait_work', '');
 
         $this->assertEquals('pending', $labour->getStatus(), 'Unexpected worker code in received item');
+    }
 
+    /**
+     * Test set status to worker by identity.
+     */
+    public function testUpdateLabourWithPid()
+    {
+        $queue      = Mage::getSingleton('pulchqueue/queue');
+        $resource   = Mage::getResourceModel('pulchqueue/queue_labour');
+        $labour     = Mage::getModel('pulchqueue/labour');
+
+        $labour = $queue->add('test_successful_wait_work');
+
+        $resource->updateField($labour, 'pid', 12345);
+
+        $this->assertEquals(12345, $labour->getPid(), 'Unexpected labour pid');
+    }
+
+    /**
+     * Test set status to worker by identity.
+     */
+    public function testHasUnprocessedWorkerIdentity()
+    {
+        $queue      = Mage::getSingleton('pulchqueue/queue');
+        $resource   = Mage::getResourceModel('pulchqueue/queue_labour');
+        $labour     = Mage::getModel('pulchqueue/labour');
+
+        $labour = $queue->add('test_successful_wait_work');
+
+        $result = $resource->hasUnprocessedWorkerIdentity('test_successful_wait_work', '');
+
+        $this->assertEquals($result, $labour->getId(), 'Unexpected labour ID');
     }
 }
 
