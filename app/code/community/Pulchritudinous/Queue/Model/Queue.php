@@ -46,6 +46,7 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($worker);
+        $labourModel    = Mage::getModel('pulchqueue/labour');
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
@@ -71,7 +72,7 @@ class Pulchritudinous_Queue_Model_Queue
         }
 
         if ($config->getRule() == 'ignore') {
-            $hasLabour = $this->getResource()->hasUnprocessedWorkerIdentity(
+            $hasLabour = $labourModel->getResource()->hasUnprocessedWorkerIdentity(
                 $worker,
                 $options->getIdentity()
             );
@@ -80,14 +81,14 @@ class Pulchritudinous_Queue_Model_Queue
                 return true;
             }
         } elseif ($config->getRule() == 'replace') {
-            $this->getResource()->setStatusOnUnprocessedByWorkerIdentity(
+            $labourModel->getResource()->setStatusOnUnprocessedByWorkerIdentity(
                 'replaced',
                 $worker,
                 $options->getIdentity()
             );
         }
 
-        $labour = Mage::getModel('pulchqueue/labour')
+        $labourModel
             ->setWorker($worker)
             ->addData($options->getData())
             ->setIdentity($identity)
@@ -95,7 +96,7 @@ class Pulchritudinous_Queue_Model_Queue
             ->setStatus('pending')
             ->save();
 
-        return $labour;
+        return $labourModel;
     }
 
     /**
