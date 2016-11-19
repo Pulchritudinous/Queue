@@ -35,7 +35,7 @@ class Pulchritudinous_Queue_Model_QueueTest
     /**
      * Initial setup.
      */
-    public static function setUpBeforeClass()
+    public function setUp()
     {
         self::clearQueue();
     }
@@ -79,24 +79,13 @@ class Pulchritudinous_Queue_Model_QueueTest
         $dbLabour = Mage::getModel('pulchqueue/labour')->load($orgLabour->getId());
 
         $this->assertEquals('pending', $dbLabour->getStatus(), 'New item status must be "pending"');
-    }
 
-    /**
-     * Receive next labour and verify type.
-     *
-     * @depends testAddLabourToQueue
-     */
-    public function testReceiveLabourFromQueue()
-    {
-        $queue  = Mage::getSingleton('pulchqueue/queue');
         $labour = $queue->receive();
 
         $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $labour);
 
         $this->assertEquals('deployed', $labour->getStatus(), 'Received item status must be "deployed"');
         $this->assertEquals('test_successful_work', $labour->getWorker(), 'Unexpected worker code in received item');
-
-        $labour->delete();
     }
 
     /**
@@ -117,8 +106,6 @@ class Pulchritudinous_Queue_Model_QueueTest
             ->getSize();
 
         $this->assertEquals(1, $count);
-
-        self::clearQueue();
     }
 
     /**
@@ -148,8 +135,6 @@ class Pulchritudinous_Queue_Model_QueueTest
         $labour = $queue->receive();
 
         $this->assertEquals(['id' => 2], $labour->getPayload(), 'Unexpected worker payload');
-
-        self::clearQueue();
     }
 
     /**
@@ -184,8 +169,6 @@ class Pulchritudinous_Queue_Model_QueueTest
         foreach ($batchCollection as $bundle) {
             $this->assertEquals('finished', $bundle->getStatus(), ' Labours status should be "finished"');
         }
-
-        self::clearQueue();
     }
 }
 
