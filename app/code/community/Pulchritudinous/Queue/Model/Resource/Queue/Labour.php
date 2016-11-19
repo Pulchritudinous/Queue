@@ -149,12 +149,12 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             ->from($this->getMainTable(), 'id')
             ->where('worker = :worker')
             ->where('identity = :identity')
-            ->where('running = :running');
+            ->where('status = :status');
 
         $bind = [
             ':worker'   => (string) $worker,
             ':identity' => (string) $identity,
-            ':running'  => false,
+            ':status'   => 'pending',
         ];
 
         return $adapter->fetchOne($select, $bind);
