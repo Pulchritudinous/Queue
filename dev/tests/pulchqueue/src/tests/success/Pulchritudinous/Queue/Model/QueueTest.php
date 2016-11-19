@@ -35,9 +35,9 @@ class Pulchritudinous_Queue_Model_QueueTest
     /**
      * Initial setup.
      */
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->_clearQueue();
+        self::clearQueue();
     }
 
     /**
@@ -45,15 +45,13 @@ class Pulchritudinous_Queue_Model_QueueTest
      *
      * @return Pulchritudinous_Queue_Model_QueueTest
      */
-    protected function _clearQueue()
+    public static function clearQueue()
     {
         $resource   = Mage::getSingleton('core/resource');
-        $table      = $resource->getTableName('pulchqueue/labour');
         $adapter    = $resource->getConnection('core_write');
+        $table      = $resource->getTableName('pulchqueue/labour');
 
         $adapter->delete($table);
-
-        return $this;
     }
 
     /**
@@ -73,10 +71,85 @@ class Pulchritudinous_Queue_Model_QueueTest
      */
     public function testAddLabourToQueue()
     {
+        $queue      = Mage::getSingleton('pulchqueue/queue');
+        $orgLabour  = $queue->add('test_successful_work');
+
+        $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $orgLabour);
+
+        $dbLabour = Mage::getModel('pulchqueue/labour')->load($orgLabour->getId());
+
+        $this->assertEquals('pending', $dbLabour->getStatus(), 'New item status must be "pending"');
+    }
+
+    /**
+     * Receive next labour and verify type.
+     *
+     * @depends testAddLabourToQueue
+     */
+    public function testReceiveLabourFromQueue()
+    {
         $queue  = Mage::getSingleton('pulchqueue/queue');
-        $labour = $queue->add('test_expected_exception');
+        $labour = $queue->receive();
 
         $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $labour);
+
+        $this->assertEquals('deployed', $labour->getStatus(), 'Received item status must be "deployed"');
+        $this->assertEquals('test_successful_work', $labour->getWorker(), 'Unexpected worker code in received item');
+
+        $labour->delete();
+    }
+
+    /**
+     * Test adding ignore labour to queue.
+     */
+    public function testAddIgnoreLabourToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_ignore_work');
+        $queue->add('test_successful_ignore_work');
+        $queue->add('test_successful_ignore_work');
+        $queue->add('test_successful_ignore_work');
+        $queue->add('test_successful_ignore_work');
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->getSize();
+
+        $this->assertEquals(1, $count);
+
+        self::clearQueue();
+    }
+
+    /**
+     * Test adding replace labour to queue.
+     */
+    public function testAddReplaceLabourToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_replace_work', ['id' => 1]);
+        $queue->add('test_successful_replace_work', ['id' => 2]);
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('status', ['eq' => 'pending'])
+            ->getSize();
+
+        $this->assertEquals(1, $count, 'Should be one "pending" labour in queue');
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('status', ['eq' => 'replaced'])
+            ->getSize();
+
+        $this->assertEquals(1, $count, 'Should be one "replaced" labour in queue');
+
+        $labour = $queue->receive();
+
+        $this->assertEquals(['id' => 2], $labour->getPayload(), 'Unexpected worker payload');
+
+        self::clearQueue();
     }
 }
 
