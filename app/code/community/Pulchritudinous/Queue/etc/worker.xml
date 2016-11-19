@@ -61,7 +61,7 @@
 
             <test_successful_batch_work>
                 <type>test</type>
-                <rule>barch</rule>
+                <rule>batch</rule>
                 <priority>500</priority>
                 <class>pulchqueue/worker_labour_test_success</class>
             </test_successful_batch_work>
