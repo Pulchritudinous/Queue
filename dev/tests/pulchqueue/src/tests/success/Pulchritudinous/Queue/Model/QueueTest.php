@@ -151,5 +151,41 @@ class Pulchritudinous_Queue_Model_QueueTest
 
         self::clearQueue();
     }
+
+    /**
+     * Test adding replace labour to queue.
+     */
+    public function testAddBatchLabourToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        foreach (range(1, 5) as $id) {
+            $queue->add('test_successful_batch_work', ['id' => $id]);
+        }
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->getSize();
+
+        $this->assertEquals(5, $count, 'Should be 5 "batch" labour in queue');
+
+        $labour = $queue->receive();
+
+        $this->assertEquals('test_successful_batch_work', $labour->getWorker(), 'Unexpected worker code in received item');
+
+        $batchCollection = $labour->getBatchCollection();
+
+        $this->assertEquals(4, $batchCollection->getSize(), 'Should be 4 labours in batch collection');
+
+        $labour->execute();
+
+        $batchCollection = $labour->getBatchCollection();
+
+        foreach ($batchCollection as $bundle) {
+            $this->assertEquals('finished', $bundle->getStatus(), ' Labours status should be "finished"');
+        }
+
+        self::clearQueue();
+    }
 }
 
