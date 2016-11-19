@@ -25,28 +25,54 @@
 ?>
 <?php
 /**
- * Worker config test case.
+ * Queue test case.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Success_Pulchritudinous_Queue_Model_Worker_ConfigTest
+class Fail_Pulchritudinous_Queue_Model_QueueTest
     extends PHPUnit_Framework_TestCase
 {
     /**
-     * Test worker configuration.
+     * Initial setup.
      */
-    public function testGetWorkerConfig()
+    public static function setUpBeforeClass()
     {
-        $config = Mage::getModel('pulchqueue/worker_config')
-            ->getWorkerConfig('test_expected_exception');
+        self::clearQueue();
+    }
 
-        $this->assertInstanceOf(Varien_Object::class, $config);
+    /**
+     * Tear-down setup.
+     */
+    public function tearDown()
+    {
+        self::clearQueue();
+    }
 
-        $this->assertRegExp('/\d+/', $config->getPriority(), 'Priority needs to be a integer');
-        $this->assertNotEmpty($config->getRule(), 'Rule need to be defined');
-        $this->assertRegExp('/\d+/', $config->getDelay(), 'Delay needs to be a integer');
-        $this->assertRegExp('/\d+/', $config->getRetries(), 'Retries needs to be a integer');
-        $this->assertRegExp('/\d+/', $config->getReschedule(), 'Reschedule needs to be a integer');
+    /**
+     * Clear queue from all labours.
+     *
+     * @return Pulchritudinous_Queue_Model_QueueTest
+     */
+    public static function clearQueue()
+    {
+        $resource   = Mage::getSingleton('core/resource');
+        $adapter    = $resource->getConnection('core_write');
+        $table      = $resource->getTableName('pulchqueue/labour');
+
+        $adapter->delete($table);
+    }
+
+    /**
+     * Test job that throws an exception and is cached within labour execution.
+     */
+    public function testAddExceptionLabourToQueue()
+    {
+        $queue  = Mage::getSingleton('pulchqueue/queue');
+        $labour = $queue->add('test_expected_exception');
+
+        $labour->execute();
+
+        $this->assertEquals('failed', $labour->getStatus(), 'Labour status must be "failed"');
     }
 }
 

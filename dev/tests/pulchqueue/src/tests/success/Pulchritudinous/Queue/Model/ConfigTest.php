@@ -29,7 +29,7 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_ConfigTest
+class Success_Pulchritudinous_Queue_Model_ConfigTest
     extends PHPUnit_Framework_TestCase
 {
     /**
