@@ -80,5 +80,31 @@ class Success_Pulchritudinous_Queue_Model_Resource_LabourTest
 
         $this->assertEquals('test_successful_ignore_work', $labour->getWorker(), 'Unexpected worker code in received item');
     }
+
+    /**
+     * Test set status to worker by identity.
+     */
+    public function testSetStatusOnUnprocessedByWorkerIdentity()
+    {
+        $queue      = Mage::getSingleton('pulchqueue/queue');
+        $resource   = Mage::getResourceModel('pulchqueue/queue_labour');
+        $labour     = Mage::getModel('pulchqueue/labour');
+
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_wait_work', [], ['identity' => 'testunit']);
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_wait_work');
+
+        $resource->setStatusOnUnprocessedByWorkerIdentity('testing', 'test_successful_wait_work', 'testunit');
+
+        $resource->loadByWorkerIdentity($labour, 'test_successful_wait_work', 'testunit');
+
+        $this->assertEquals('testing', $labour->getStatus(), 'Unexpected worker code in received item');
+
+        $resource->loadByWorkerIdentity($labour, 'test_successful_wait_work', '');
+
+        $this->assertEquals('pending', $labour->getStatus(), 'Unexpected worker code in received item');
+
+    }
 }
 
