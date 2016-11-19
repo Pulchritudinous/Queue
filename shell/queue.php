@@ -153,6 +153,7 @@ class Pulchritudinous_Queue_Shell
                     new Varien_Object([
                         'id'        => $status['pid'],
                         'resource'  => $resource,
+                        'labour'    => $labour,
                     ])
                 );
 
@@ -176,11 +177,18 @@ class Pulchritudinous_Queue_Shell
         foreach ($processes as $process) {
             if (!self::validateProcess($process->getResource())) {
                 proc_close($process->getResource());
+
+                $labour->setAsUnknown();
                 $processes->removeItemByKey($process->getId());
             }
         }
     }
 
+    /**
+     *
+     *
+     *
+     */
     public static function addRecurringJobs($config)
     {
         $recurringConfig = new Varien_Object(
@@ -343,4 +351,5 @@ USAGE;
 
 $shell = new Pulchritudinous_Queue_Shell();
 $shell->run();
+
 

@@ -121,7 +121,7 @@ class Pulchritudinous_Queue_Model_Labour
             $this->_execute();
             $this->_afterExecute();
         } catch (Exception $e) {
-            $this->_setAsFailed();
+            $this->setAsFailed();
 
             Mage::logException($e);
         }
@@ -150,7 +150,7 @@ class Pulchritudinous_Queue_Model_Labour
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
-    protected function _setAsFailed()
+    public function setAsFailed()
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfig($this->getWorker());
@@ -175,6 +175,32 @@ class Pulchritudinous_Queue_Model_Labour
                     $transaction->addObject($bundle);
                 }
             }
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as unknown.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function setAsUnknown()
+    {
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status'        => self::STATUS_UNKNOWN,
+            'finished_at'   => now(),
+        ];
+
+        foreach ($this->getBatchCollection() as $bundle) {
+            $bundle->addData($data);
+            $transaction->addObject($bundle);
         }
 
         $this->addData($data);

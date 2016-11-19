@@ -53,11 +53,12 @@
                 <class>pulchqueue/worker_labour_test_exception</class>
             </test_expected_exception>
 
-            <test_successful_work>
+            <test_successful_wait_work>
                 <type>test</type>
+                <rule>wait</rule>
                 <priority>500</priority>
                 <class>pulchqueue/worker_labour_test_success</class>
-            </test_successful_work>
+            </test_successful_wait_work>
 
             <test_successful_batch_work>
                 <type>test</type>

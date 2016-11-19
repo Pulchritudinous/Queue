@@ -35,7 +35,15 @@ class Pulchritudinous_Queue_Model_QueueTest
     /**
      * Initial setup.
      */
-    public function setUp()
+    public static function setUpBeforeClass()
+    {
+        self::clearQueue();
+    }
+
+    /**
+     * teardown setup.
+     */
+    public function tearDown()
     {
         self::clearQueue();
     }
@@ -72,7 +80,8 @@ class Pulchritudinous_Queue_Model_QueueTest
     public function testAddLabourToQueue()
     {
         $queue      = Mage::getSingleton('pulchqueue/queue');
-        $orgLabour  = $queue->add('test_successful_work');
+        $orgLabour  = $queue->add('test_successful_wait_work');
+        $secLabour  = $queue->add('test_successful_wait_work');
 
         $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $orgLabour);
 
@@ -84,8 +93,13 @@ class Pulchritudinous_Queue_Model_QueueTest
 
         $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $labour);
 
+        $this->assertEquals($orgLabour->getId(), $labour->getId(), 'Unexpected labour received');
         $this->assertEquals('deployed', $labour->getStatus(), 'Received item status must be "deployed"');
-        $this->assertEquals('test_successful_work', $labour->getWorker(), 'Unexpected worker code in received item');
+        $this->assertEquals('test_successful_wait_work', $labour->getWorker(), 'Unexpected worker code in received item');
+
+        $labour = $queue->receive();
+
+        $this->assertFalse($labour, 'Unexpected worker in received item');
     }
 
     /**
@@ -169,6 +183,48 @@ class Pulchritudinous_Queue_Model_QueueTest
         foreach ($batchCollection as $bundle) {
             $this->assertEquals('finished', $bundle->getStatus(), ' Labours status should be "finished"');
         }
+    }
+
+    /**
+     * Test receiving labour based on priority.
+     */
+    public function testAddMixedLabourPriorotyToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_wait_work', ['id' => 1], ['priority' => 999]);
+        $queue->add('test_successful_wait_work', ['id' => 2], ['priority' => 342]);
+        $queue->add('test_successful_wait_work', ['id' => 3], ['priority' => 525]);
+        $queue->add('test_successful_wait_work', ['id' => 4], ['priority' => 123]);
+        $queue->add('test_successful_wait_work', ['id' => 5], ['priority' => 332]);
+
+        $labour = $queue->receive();
+
+        $this->assertEquals(['id' => 4], $labour->getPayload(), 'Unexpected worker in received item');
+    }
+
+    /**
+     * Test receiving labour based on execute at.
+     */
+    public function testAddMixedLabourExecuteAtToQueue()
+    {
+        $queue = Mage::getSingleton('pulchqueue/queue');
+
+        $queue->add('test_successful_wait_work', ['id' => 1], ['delay' => 999]);
+        $queue->add('test_successful_wait_work', ['id' => 2], ['delay' => 342]);
+        $queue->add('test_successful_wait_work', ['id' => 3], ['delay' => 3]);
+        $queue->add('test_successful_wait_work', ['id' => 4], ['delay' => 123]);
+        $queue->add('test_successful_wait_work', ['id' => 5], ['delay' => 332]);
+
+        $labour = $queue->receive();
+
+        $this->assertFalse($labour, 'Unexpected worker in received item');
+
+        sleep(3.5);
+
+        $labour = $queue->receive();
+
+        $this->assertEquals(['id' => 3], $labour->getPayload(), 'Unexpected worker in received item');
     }
 }
 

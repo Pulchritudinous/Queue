@@ -92,7 +92,7 @@ class Pulchritudinous_Queue_Model_Queue
             ->setWorker($worker)
             ->addData($options->getData())
             ->setIdentity($identity)
-            ->setPayload(serialize($this->_validateArrayData($payload)))
+            ->setPayload($this->_validateArrayData($payload))
             ->setStatus('pending')
             ->save();
 
@@ -199,7 +199,7 @@ class Pulchritudinous_Queue_Model_Queue
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
-            $running[$identity] = null;
+            $running[$identity] = $identity;
         }
 
         foreach ($queueCollection as $labour) {
@@ -284,29 +284,14 @@ class Pulchritudinous_Queue_Model_Queue
      */
     public function getRunning()
     {
+        $statuses = [
+            Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
+            Pulchritudinous_Queue_Model_Labour::STATUS_RUNNING,
+        ];
+
         $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
-            ->addFieldToFilter('status', ['eq' => 'running']);
-
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $hasUnknown     = false;
-
-        foreach ($collection as $labour) {
-            if (!posix_kill($labour->getPid(), 0)) {
-                $hasUnknown = true;
-
-                $labour->setFinishedAt(now());
-                $labour->setStatus(Pulchritudinous_Queue_Model_Labour::STATUS_UNKNOWN);
-
-                $transaction->addObject($labour);
-
-                $collection->removeItemByKey($labour->getId());
-            }
-        }
-
-        if ($hasUnknown == true) {
-            $transaction->save();
-        }
+            ->addFieldToFilter('status', ['in' => $statuses]);
 
         return $collection;
     }
