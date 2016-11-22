@@ -33,49 +33,33 @@ class Pulchritudinous_Queue_Model_ConfigTest
     extends PHPUnit_Framework_TestCase
 {
     /**
-     * Test queue config data type.
+     * Test queue configuration contains data.
      */
-    public function testWorkerDefaultConfigDataType()
+    public function testQueueConfig()
     {
         $config = Mage::getModel('pulchqueue/config')
-            ->getWorkerDefaultConfig();
+            ->getQueueConfig();
 
-        $this->assertInternalType('array', $config);
+        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertNotEmpty($config->getData());
+
+        $this->assertRegExp('/\d+/', $config->getPoll(), 'Poll needs to be a integer');
+        $this->assertRegExp('/\d+/', $config->getThreads(), 'Poll needs to be a integer');
     }
 
     /**
-     * Test that queue config contains data.
+     * Test recurring configuration contains data.
      */
-    public function testWorkerDefaultConfigContainsValues()
+    public function testRecurringConfig()
     {
         $config = Mage::getModel('pulchqueue/config')
-            ->getWorkerDefaultConfig();
+            ->getRecurringConfig();
 
-        $this->assertNotEmpty($config);
-    }
+        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertNotEmpty($config->getData());
 
-    /**
-     * Test worker config has workers.
-     */
-    public function testHasWorkers()
-    {
-        $workers = Mage::getModel('pulchqueue/config')
-            ->getWorkers();
-
-        $this->assertInstanceOf(Varien_Data_Collection::class, $workers);
-
-        $this->assertGreaterThan(0, $workers->count());
-    }
-
-    /**
-     * Test worker config has workers.
-     */
-    public function testWorkerConfigDataType()
-    {
-        $config = Mage::getModel('pulchqueue/config')
-            ->getWorkerConfig();
-
-        $this->assertInstanceOf(Varien_Simplexml_Config::class, $config);
+        $this->assertRegExp('/\d+/', $config->getPlanAheadMin(), 'Plan ahead min needs to be a integer');
+        $this->assertRegExp('/\d+/', $config->getPlanningResolution(), 'Planning resolution needs to be a integer');
     }
 }
 

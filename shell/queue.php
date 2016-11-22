@@ -107,9 +107,7 @@ class Pulchritudinous_Queue_Shell
         $errorFile      = $logDir . DS . Mage::getStoreConfig('dev/log/exception_file');
         $queue          = Mage::getSingleton('pulchqueue/queue');
         $configModel    = Mage::getSingleton('pulchqueue/config');
-        $configData     = new Varien_Object(
-            Mage::getConfig()->getNode('global/pulchqueue/queue')->asArray()
-        );
+        $configData     = $configModel->getQueueConfig();
 
         self::$configData   = $configData;
         self::$processes    = new Varien_Data_Collection();
@@ -191,9 +189,7 @@ class Pulchritudinous_Queue_Shell
      */
     public static function addRecurringJobs($config)
     {
-        $recurringConfig = new Varien_Object(
-            Mage::getConfig()->getNode('global/pulchqueue/recurring')->asArray()
-        );
+        $recurringConfig = Mage::getSingleton('pulchqueue/config')->getRecurringConfig();
 
         $last       = self::$lastSchedule;
         $itsTime    = ($last + $recurringConfig->getPlanAheadMin() * 60) <= time();
@@ -254,9 +250,7 @@ class Pulchritudinous_Queue_Shell
      */
     public static function generateRunDates($pattern)
     {
-        $recurringConfig = new Varien_Object(
-            Mage::getConfig()->getNode('global/pulchqueue/recurring')->asArray()
-        );
+        $recurringConfig = Mage::getSingleton('pulchqueue/config')->getRecurringConfig();
 
         $scheduler  = Mage::getModel('cron/schedule');
         $time       = time();

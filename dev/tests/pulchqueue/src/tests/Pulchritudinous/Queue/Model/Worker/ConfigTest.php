@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- * Worker config test case.
+ * Worker configuration test case.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -47,6 +47,50 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
         $this->assertRegExp('/\d+/', $config->getDelay(), 'Delay needs to be a integer');
         $this->assertRegExp('/\d+/', $config->getRetries(), 'Retries needs to be a integer');
         $this->assertRegExp('/\d+/', $config->getReschedule(), 'Reschedule needs to be a integer');
+    }
+
+    /**
+     * Test worker default configuration.
+     */
+    public function testWorkerDefaultConfig()
+    {
+        $config = Mage::getModel('pulchqueue/worker_config')
+            ->getWorkerDefaultConfig();
+
+        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertNotEmpty($config->getData());
+
+        $this->assertRegExp('/\d+/', $config->getPoll(), 'Poll needs to be a integer');
+        $this->assertRegExp('/\d+/', $config->getThreads(), 'Poll needs to be a integer');
+
+        $config = Mage::getModel('pulchqueue/worker_config')
+            ->getWorkerDefaultConfig(true);
+
+        $this->assertInternalType('array', $config);
+    }
+
+    /**
+     * Test worker configuration worker count.
+     */
+    public function testHasWorkers()
+    {
+        $workers = Mage::getModel('pulchqueue/worker_config')
+            ->getWorkers();
+
+        $this->assertInstanceOf(Varien_Data_Collection::class, $workers);
+
+        $this->assertGreaterThan(0, $workers->count());
+    }
+
+    /**
+     * Test worker configuration data type.
+     */
+    public function testWorkerConfigDataType()
+    {
+        $config = Mage::getModel('pulchqueue/worker_config')
+            ->getWorkerConfig();
+
+        $this->assertInstanceOf(Varien_Simplexml_Config::class, $config);
     }
 }
 

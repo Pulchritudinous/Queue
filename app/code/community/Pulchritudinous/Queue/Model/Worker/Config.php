@@ -32,16 +32,35 @@
 class Pulchritudinous_Queue_Model_Worker_Config
 {
     /**
+     * Returns default worker configuration.
+     *
+     * @param  boolean $asArray
+     *
+     * @return array
+     */
+    public function getWorkerDefaultConfig($asArray = false)
+    {
+        $config = $this->getWorkerConfig()->getNode("pulchqueue/worker_default");
+
+        if ($config) {
+            $config->asArray();
+        } else {
+            $config = [];
+        }
+
+        return ($asArray) ? $config : new Varien_Object($config);
+    }
+
+    /**
      * Returns worker configuration.
      *
      * @param  string $name
      *
      * @return Varien_Object|boolean
      */
-    public function getWorkerConfig($name)
+    public function getWorkerConfigByName($name)
     {
-        $configModel    = Mage::getSingleton('pulchqueue/config');
-        $workers        = $configModel->getWorkers();
+        $workers = $this->getWorkers();
 
         if (!($config = $workers->getItemByColumnValue('worker_name', $name))) {
             return false;
@@ -49,7 +68,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
 
         $config->setData(
             array_merge(
-                $configModel->getWorkerDefaultConfig(),
+                $this->getWorkerDefaultConfig(true),
                 array_filter($config->getData())
             )
         );
@@ -80,6 +99,72 @@ class Pulchritudinous_Queue_Model_Worker_Config
         $config->setWorkerModel($object);
 
         return true;
+    }
+
+    /**
+     * Returns all active worker resources.
+     *
+     * @return Varien_Data_Collection
+     */
+    public function getWorkers()
+    {
+        $collection = new Varien_Data_Collection;
+        $resources  = $this->getWorkerConfig()->getNode("pulchqueue/worker");
+
+        if (!$resources) {
+            return $collection;
+        }
+
+        $resources = $resources->asArray();
+
+        foreach ($resources as $key => $resource) {
+            $config = new Varien_Object(
+                $resource
+            );
+
+            if (strtolower($config->getType()) == 'disable') {
+                continue;
+            }
+
+            if (strtolower($config->getType()) == 'test' && !Mage::getIsDeveloperMode()) {
+                continue;
+            }
+
+            $config->setRule(strtolower($config->getRule()));
+            $config->setWorkerName($key);
+
+            $collection->addItem($config);
+        }
+
+        return $collection;
+    }
+
+    /**
+     * Returns worker configuration.
+     *
+     * @return Varien_Simplexml_Config
+     */
+    public function getWorkerConfig()
+    {
+        $this->setCacheId('pulchqueue_worker_config');
+
+        if (!($workerConfig = Mage::app()->loadCache($this->getCacheId()))) {
+            $workerConfig = new Varien_Simplexml_Config;
+            $workerConfig->loadString('<?xml version="1.0"?><config></config>');
+
+            Mage::getConfig()->loadModulesConfiguration('worker.xml', $workerConfig);
+
+            if (Mage::app()->useCache('config')) {
+                Mage::app()->saveCache(
+                    $workerConfig->getXmlString(), $this->getCacheId(),
+                    [Mage_Core_Model_Config::CACHE_TAG]
+                );
+            }
+        } else {
+            $workerConfig = new Varien_Simplexml_Config($workerConfig);
+        }
+
+        return $workerConfig;
     }
 }
 

@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- * Queue and labour configuration model.
+ * Queue configuration model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -33,81 +33,39 @@ class Pulchritudinous_Queue_Model_Config
     extends Varien_Simplexml_Config
 {
     /**
-     * Returns default worker configuration.
+     * Returns queue configuration.
      *
-     * @return array
+     * @return Varien_Object
      */
-    public function getWorkerDefaultConfig()
+    public function getQueueConfig()
     {
-        $config = $this->getWorkerConfig()->getNode("pulchqueue/worker_default")->asArray();
+        $config = Mage::getConfig()->getNode('global/pulchqueue/queue');
 
-        return $config;
-    }
-
-    /**
-     * Returns all active worker resources.
-     *
-     * @return Varien_Data_Collection
-     */
-    public function getWorkers()
-    {
-        $collection = new Varien_Data_Collection;
-        $resources  = $this->getWorkerConfig()->getNode("pulchqueue/worker");
-
-        if (!$resources) {
-            return $collection;
-        }
-
-        $resources = $resources->asArray();
-
-        foreach ($resources as $key => $resource) {
-            $config = new Varien_Object(
-                $resource
-            );
-
-            if (strtolower($config->getType()) == 'disable') {
-                continue;
-            }
-
-            if (strtolower($config->getType()) == 'test' && !Mage::getIsDeveloperMode()) {
-                continue;
-            }
-
-            $config->setRule(strtolower($config->getRule()));
-            $config->setWorkerName($key);
-
-            $collection->addItem($config);
-        }
-
-        return $collection;
-    }
-
-    /**
-     * Returns worker configuration.
-     *
-     * @return Varien_Simplexml_Config
-     */
-    public function getWorkerConfig()
-    {
-        $this->setCacheId('pulchqueue_worker_config');
-
-        if (!($workerConfig = Mage::app()->loadCache($this->getCacheId()))) {
-            $workerConfig = new Varien_Simplexml_Config;
-            $workerConfig->loadString('<?xml version="1.0"?><config></config>');
-
-            Mage::getConfig()->loadModulesConfiguration('worker.xml', $workerConfig);
-
-            if (Mage::app()->useCache('config')) {
-                Mage::app()->saveCache(
-                    $workerConfig->getXmlString(), $this->getCacheId(),
-                    [Mage_Core_Model_Config::CACHE_TAG]
-                );
-            }
+        if ($config) {
+            $config->asArray();
         } else {
-            $workerConfig = new Varien_Simplexml_Config($workerConfig);
+            $config = [];
         }
 
-        return $workerConfig;
+        return new Varien_Object($config);
+    }
+
+    /**
+     * Returns recurring configuration.
+     *
+     * @return Varien_Object
+     */
+    public function getRecurringConfig()
+    {
+        $config = Mage::getConfig()->getNode('global/pulchqueue/recurring');
+
+        if ($config) {
+            $config->asArray();
+        } else {
+            $config = [];
+        }
+
+        return new Varien_Object($config);
     }
 }
 
