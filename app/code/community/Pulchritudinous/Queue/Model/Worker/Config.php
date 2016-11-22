@@ -37,7 +37,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
      *
      * @param  boolean $asArray
      *
-     * @return array
+     * @return array|Varien_Object
      */
     public function getWorkerDefaultConfig($asArray = false)
     {
