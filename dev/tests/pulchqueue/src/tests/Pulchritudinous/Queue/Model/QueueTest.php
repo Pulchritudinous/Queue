@@ -29,7 +29,7 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Success_Pulchritudinous_Queue_Model_QueueTest
+class Pulchritudinous_Queue_Model_QueueTest
     extends PHPUnit_Framework_TestCase
 {
     /**
@@ -259,6 +259,33 @@ class Success_Pulchritudinous_Queue_Model_QueueTest
         $labour = $queue->receive();
 
         $this->assertEquals('test_successful_wait_work', $labour->getWorker(), 'Unexpected worker code in received item');
+    }
+
+    /**
+     * Clear queue from all labours.
+     *
+     * @return Pulchritudinous_Queue_Model_QueueTest
+     */
+    public static function clearQueue()
+    {
+        $resource   = Mage::getSingleton('core/resource');
+        $adapter    = $resource->getConnection('core_write');
+        $table      = $resource->getTableName('pulchqueue/labour');
+
+        $adapter->delete($table);
+    }
+
+    /**
+     * Test job that throws an exception and is cached within labour execution.
+     */
+    public function testAddExceptionLabourToQueue()
+    {
+        $queue  = Mage::getSingleton('pulchqueue/queue');
+        $labour = $queue->add('test_expected_exception');
+
+        $labour->execute();
+
+        $this->assertEquals('failed', $labour->getStatus(), 'Labour status must be "failed"');
     }
 }
 

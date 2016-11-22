@@ -29,50 +29,54 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Fail_Pulchritudinous_Queue_Model_QueueTest
+class Pulchritudinous_Queue_Model_ConfigTest
     extends PHPUnit_Framework_TestCase
 {
     /**
-     * Initial setup.
+     * Test queue config data type.
      */
-    public static function setUpBeforeClass()
+    public function testWorkerDefaultConfigDataType()
     {
-        self::clearQueue();
+        $config = Mage::getModel('pulchqueue/config')
+            ->getWorkerDefaultConfig();
+
+        $this->assertInternalType('array', $config);
     }
 
     /**
-     * Tear-down setup.
+     * Test that queue config contains data.
      */
-    public function tearDown()
+    public function testWorkerDefaultConfigContainsValues()
     {
-        self::clearQueue();
+        $config = Mage::getModel('pulchqueue/config')
+            ->getWorkerDefaultConfig();
+
+        $this->assertNotEmpty($config);
     }
 
     /**
-     * Clear queue from all labours.
-     *
-     * @return Pulchritudinous_Queue_Model_QueueTest
+     * Test worker config has workers.
      */
-    public static function clearQueue()
+    public function testHasWorkers()
     {
-        $resource   = Mage::getSingleton('core/resource');
-        $adapter    = $resource->getConnection('core_write');
-        $table      = $resource->getTableName('pulchqueue/labour');
+        $workers = Mage::getModel('pulchqueue/config')
+            ->getWorkers();
 
-        $adapter->delete($table);
+        $this->assertInstanceOf(Varien_Data_Collection::class, $workers);
+
+        $this->assertGreaterThan(0, $workers->count());
     }
 
     /**
-     * Test job that throws an exception and is cached within labour execution.
+     * Test worker config has workers.
      */
-    public function testAddExceptionLabourToQueue()
+    public function testWorkerConfigDataType()
     {
-        $queue  = Mage::getSingleton('pulchqueue/queue');
-        $labour = $queue->add('test_expected_exception');
+        $config = Mage::getModel('pulchqueue/config')
+            ->getWorkerConfig();
 
-        $labour->execute();
-
-        $this->assertEquals('failed', $labour->getStatus(), 'Labour status must be "failed"');
+        $this->assertInstanceOf(Varien_Simplexml_Config::class, $config);
     }
 }
+
 

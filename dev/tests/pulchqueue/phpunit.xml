@@ -15,11 +15,8 @@
     </php>
 
     <testsuites>
-        <testsuite name="Successful Pulchritudinous Queue Unit Test">
-            <directory>src/tests/success</directory>
-        </testsuite>
-        <testsuite name="Failing Pulchritudinous Queue Unit Test">
-            <directory>src/tests/fail</directory>
+        <testsuite name="Pulchritudinous Queue Unit Test">
+            <directory>src/tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>

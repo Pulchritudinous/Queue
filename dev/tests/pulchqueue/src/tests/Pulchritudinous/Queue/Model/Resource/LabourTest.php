@@ -29,7 +29,7 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Success_Pulchritudinous_Queue_Model_Resource_LabourTest
+class Pulchritudinous_Queue_Model_Resource_LabourTest
     extends PHPUnit_Framework_TestCase
 {
     /**
