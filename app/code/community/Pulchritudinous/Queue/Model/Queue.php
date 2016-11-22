@@ -32,6 +32,11 @@
 class Pulchritudinous_Queue_Model_Queue
 {
     /**
+     * Queue trait.
+     */
+    use Pulchritudinous_Queue_Model_Trait_Queue;
+
+    /**
      * Add a job to the queue that will be asynchronously handled by a worker.
      *
      * @param  string   $worker
@@ -97,91 +102,6 @@ class Pulchritudinous_Queue_Model_Queue
             ->save();
 
         return $labourModel;
-    }
-
-    /**
-     *
-     *
-     * @param  array         $options
-     * @param  Varien_Object $config
-     *
-     * @return Varien_Object
-     */
-    protected function _getOptions($options, $config)
-    {
-        $allowed = [
-            'identity',
-            'priority',
-            'retries',
-            'delay',
-            'execute_at',
-        ];
-
-        $options = array_intersect_key(
-            $options,
-            array_flip($allowed)
-        );
-
-        $mergedOptions = array_merge(
-            $config->getData(),
-            $options
-        );
-
-        return new Varien_Object($options);
-    }
-
-    /**
-     * Parses when the labour should be executed.
-     *
-     * @param  Varien_Object           $config
-     * @param  false|integer|Zend_Date $delay
-     *
-     * @return string
-     */
-    protected function _getWhen($config, $delay = false)
-    {
-        $time           = time();
-        $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
-
-        if ($delay !== false) {
-            if (is_numeric($delay)) {
-                $when = date('Y-m-d H:i:s', $time + $delay);
-            } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString("Y-m-d H:mm:s");
-            } elseif (is_numeric($config->getDelay())) {
-                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
-            }
-        }
-
-        return $when;
-    }
-
-    /**
-     * Validate array data to make sure it does not contain objects.
-     *
-     * @param  array $data
-     *
-     * @return array
-     */
-    protected function _validateArrayData($data)
-    {
-        $return = [];
-
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $return[$key] = $this->_validateArrayData($value);
-
-                continue;
-            }
-
-            if (is_object($value)) {
-                continue;
-            }
-
-            $return[$key] = $value;
-        }
-
-        return $return;
     }
 
     /**

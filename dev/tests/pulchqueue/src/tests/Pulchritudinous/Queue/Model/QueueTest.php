@@ -33,6 +33,11 @@ class Pulchritudinous_Queue_Model_QueueTest
     extends PHPUnit_Framework_TestCase
 {
     /**
+     * Queue trait.
+     */
+    use Pulchritudinous_Queue_Model_Trait_Queue;
+
+    /**
      * Initial setup.
      */
     public static function setUpBeforeClass()
@@ -82,6 +87,12 @@ class Pulchritudinous_Queue_Model_QueueTest
         $queue      = Mage::getSingleton('pulchqueue/queue');
         $orgLabour  = $queue->add('test_successful_wait_work');
         $secLabour  = $queue->add('test_successful_wait_work');
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->getSize();
+
+        $this->assertEquals(2, $count);
 
         $this->assertInstanceOf(Pulchritudinous_Queue_Model_Labour::class, $orgLabour);
 
@@ -149,6 +160,10 @@ class Pulchritudinous_Queue_Model_QueueTest
         $labour = $queue->receive();
 
         $this->assertEquals(['id' => 2], $labour->getPayload(), 'Unexpected worker payload');
+
+        $labour = $queue->receive();
+
+        $this->assertFalse($labour, 'Unexpected worker in received item');
     }
 
     /**
@@ -175,6 +190,10 @@ class Pulchritudinous_Queue_Model_QueueTest
         $batchCollection = $labour->getBatchCollection();
 
         $this->assertEquals(4, $batchCollection->getSize(), 'Should be 4 labours in batch collection');
+
+        foreach ($batchCollection as $bundle) {
+            $this->assertEquals('deployed', $bundle->getStatus(), 'Received child item status must be "deployed"');
+        }
 
         $labour->execute();
 
