@@ -30,7 +30,6 @@
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Config
-    extends Varien_Simplexml_Config
 {
     /**
      * Returns queue configuration.
@@ -42,7 +41,7 @@ class Pulchritudinous_Queue_Model_Config
         $config = Mage::getConfig()->getNode('global/pulchqueue/queue');
 
         if ($config) {
-            $config->asArray();
+            $config = $config->asArray();
         } else {
             $config = [];
         }
@@ -60,7 +59,7 @@ class Pulchritudinous_Queue_Model_Config
         $config = Mage::getConfig()->getNode('global/pulchqueue/recurring');
 
         if ($config) {
-            $config->asArray();
+            $config = $config->asArray();
         } else {
             $config = [];
         }

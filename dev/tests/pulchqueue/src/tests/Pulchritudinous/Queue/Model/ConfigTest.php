@@ -40,7 +40,7 @@ class Pulchritudinous_Queue_Model_ConfigTest
         $config = Mage::getModel('pulchqueue/config')
             ->getQueueConfig();
 
-        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertInstanceOf(Varien_Object::class, $config);
         $this->assertNotEmpty($config->getData());
 
         $this->assertRegExp('/\d+/', $config->getPoll(), 'Poll needs to be a integer');
@@ -55,7 +55,7 @@ class Pulchritudinous_Queue_Model_ConfigTest
         $config = Mage::getModel('pulchqueue/config')
             ->getRecurringConfig();
 
-        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertInstanceOf(Varien_Object::class, $config);
         $this->assertNotEmpty($config->getData());
 
         $this->assertRegExp('/\d+/', $config->getPlanAheadMin(), 'Plan ahead min needs to be a integer');

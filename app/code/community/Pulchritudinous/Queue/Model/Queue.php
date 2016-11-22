@@ -50,7 +50,7 @@ class Pulchritudinous_Queue_Model_Queue
     public function add($worker, array $payload = [], $options = [])
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfig($worker);
+        $config         = $configModel->getWorkerConfigByName($worker);
         $labourModel    = Mage::getModel('pulchqueue/labour');
 
         if (!$config) {
@@ -123,7 +123,7 @@ class Pulchritudinous_Queue_Model_Queue
         }
 
         foreach ($queueCollection as $labour) {
-            $config     = $configModel->getWorkerConfig($labour->getWorker());
+            $config     = $configModel->getWorkerConfigByName($labour->getWorker());
             $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             if ($config->getRule() == 'wait') {
@@ -248,7 +248,7 @@ class Pulchritudinous_Queue_Model_Queue
     public function reschedule(Pulchritudinous_Queue_Model_Labour $labour, $delay = false)
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfig($labour->getWorker());
+        $config         = $configModel->getWorkerConfigByName($labour->getWorker());
 
         $labour
             ->setStatus(Pulchritudinous_Queue_Model_Labour::STATUS_PENDING)

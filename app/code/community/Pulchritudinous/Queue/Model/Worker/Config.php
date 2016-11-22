@@ -30,6 +30,7 @@
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Worker_Config
+    extends Varien_Simplexml_Config
 {
     /**
      * Returns default worker configuration.
@@ -43,7 +44,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
         $config = $this->getWorkerConfig()->getNode("pulchqueue/worker_default");
 
         if ($config) {
-            $config->asArray();
+            $config = $config->asArray();
         } else {
             $config = [];
         }

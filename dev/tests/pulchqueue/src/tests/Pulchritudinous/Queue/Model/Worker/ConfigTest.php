@@ -38,7 +38,7 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
     public function testGetWorkerConfig()
     {
         $config = Mage::getModel('pulchqueue/worker_config')
-            ->getWorkerConfig('test_expected_exception');
+            ->getWorkerConfigByName('test_expected_exception');
 
         $this->assertInstanceOf(Varien_Object::class, $config);
 
@@ -88,7 +88,7 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
     public function testWorkerConfigDataType()
     {
         $config = Mage::getModel('pulchqueue/worker_config')
-            ->getWorkerConfig();
+            ->getWorkerConfigByName();
 
         $this->assertInstanceOf(Varien_Simplexml_Config::class, $config);
     }
