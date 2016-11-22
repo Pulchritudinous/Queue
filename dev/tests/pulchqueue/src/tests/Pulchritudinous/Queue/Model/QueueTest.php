@@ -262,20 +262,6 @@ class Pulchritudinous_Queue_Model_QueueTest
     }
 
     /**
-     * Clear queue from all labours.
-     *
-     * @return Pulchritudinous_Queue_Model_QueueTest
-     */
-    public static function clearQueue()
-    {
-        $resource   = Mage::getSingleton('core/resource');
-        $adapter    = $resource->getConnection('core_write');
-        $table      = $resource->getTableName('pulchqueue/labour');
-
-        $adapter->delete($table);
-    }
-
-    /**
      * Test job that throws an exception and is cached within labour execution.
      */
     public function testAddExceptionLabourToQueue()
