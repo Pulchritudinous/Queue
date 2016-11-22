@@ -70,7 +70,7 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
      *
      * @return string
      */
-    protected function _getWhen($config, $delay = false)
+    protected function _getWhen(Varien_Object $config, $delay = false)
     {
         $time           = time();
         $when           = date('Y-m-d H:i:s', $time + $config->getDelay());

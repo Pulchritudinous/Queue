@@ -292,5 +292,66 @@ class Pulchritudinous_Queue_Model_QueueTest
 
         $this->assertEquals('failed', $labour->getStatus(), 'Labour status must be "failed"');
     }
+
+    /**
+     * Test configure delay with boolean.
+     */
+    public function testConfigWhenDateByBoolean()
+    {
+        $delay      = 1337;
+        $config     = new Varien_Object(['delay' => $delay]);
+        $expeted    = date('Y-m-d H:i:s', time() + $delay);
+
+        $result     = $this->_getWhen($config, false);
+
+        $this->assertEquals($expeted, $result, 'Unexpected when string');
+    }
+
+    /**
+     * Test configure delay with integer.
+     */
+    public function testConfigWhenDateByInteger()
+    {
+        $delay      = 1337;
+        $config     = new Varien_Object();
+        $expeted    = date('Y-m-d H:i:s', time() + $delay);
+
+        $result     = $this->_getWhen($config, $delay);
+
+        $this->assertEquals($expeted, $result, 'Unexpected when string');
+    }
+
+    /**
+     * Test configure delay with object.
+     */
+    public function testConfigWhenDateByObject()
+    {
+        $delay  = 1337;
+        $date   = new Zend_Date();
+
+        $date->add($delay, Zend_Date::SECOND);
+
+        $config     = new Varien_Object();
+        $expeted    = date('Y-m-d H:i:s', time() + $delay);
+
+        $result     = $this->_getWhen($config, $delay);
+
+        $this->assertEquals($expeted, $result, 'Unexpected when string');
+    }
+
+    /**
+     * Test configure delay with unknown object.
+     */
+    public function testConfigWhenDateByUnknownObject()
+    {
+        $delay      = 1337;
+        $object     = new stdClass;
+        $config     = new Varien_Object(['delay' => $delay]);
+        $expeted    = date('Y-m-d H:i:s', time() + $delay);
+
+        $result     = $this->_getWhen($config, $object);
+
+        $this->assertEquals($expeted, $result, 'Unexpected when string');
+    }
 }
 
