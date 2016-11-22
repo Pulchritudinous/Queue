@@ -57,11 +57,8 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
         $config = Mage::getModel('pulchqueue/worker_config')
             ->getWorkerDefaultConfig();
 
-        $this->assertInstanceOf(Varien_Object::class, $workers);
+        $this->assertInstanceOf(Varien_Object::class, $config);
         $this->assertNotEmpty($config->getData());
-
-        $this->assertRegExp('/\d+/', $config->getPoll(), 'Poll needs to be a integer');
-        $this->assertRegExp('/\d+/', $config->getThreads(), 'Poll needs to be a integer');
 
         $config = Mage::getModel('pulchqueue/worker_config')
             ->getWorkerDefaultConfig(true);
@@ -88,7 +85,7 @@ class Pulchritudinous_Queue_Model_Worker_ConfigTest
     public function testWorkerConfigDataType()
     {
         $config = Mage::getModel('pulchqueue/worker_config')
-            ->getWorkerConfigByName();
+            ->getWorkerConfig();
 
         $this->assertInstanceOf(Varien_Simplexml_Config::class, $config);
     }

@@ -153,7 +153,7 @@ class Pulchritudinous_Queue_Model_Labour
     public function setAsFailed()
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfig($this->getWorker());
+        $config         = $configModel->getWorkerConfigByName($this->getWorker());
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_FAILED,
@@ -219,7 +219,7 @@ class Pulchritudinous_Queue_Model_Labour
     protected function _beforeExecute()
     {
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfig($this->getWorker());
+        $config         = $configModel->getWorkerConfigByName($this->getWorker());
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_RUNNING,
@@ -340,7 +340,7 @@ class Pulchritudinous_Queue_Model_Labour
     {
         if (!$this->_workerConfig) {
             $this->_workerConfig = Mage::getSingleton('pulchqueue/worker_config')
-                ->getWorkerConfig($this->getWorker());
+                ->getWorkerConfigByName($this->getWorker());
         }
 
         return $this;
