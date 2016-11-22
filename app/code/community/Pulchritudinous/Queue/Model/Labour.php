@@ -82,6 +82,13 @@ class Pulchritudinous_Queue_Model_Labour
     protected $_workerConfig    = false;
 
     /**
+     * Queue model trait.
+     */
+    use Pulchritudinous_Queue_Model_Trait_Queue {
+        _getWhen  as protected;
+    }
+
+    /**
      * Initial configuration.
      */
     public function __construct()
@@ -120,6 +127,10 @@ class Pulchritudinous_Queue_Model_Labour
             $this->_beforeExecute();
             $this->_execute();
             $this->_afterExecute();
+        } catch (Pulchritudinous_Queue_RescheduleException $e) {
+            $this->reschedule();
+
+            Mage::logException($e);
         } catch (Exception $e) {
             $this->setAsFailed();
 
@@ -141,6 +152,51 @@ class Pulchritudinous_Queue_Model_Labour
             ->setLabour($this)
             ->setConfig($config)
             ->execute();
+
+        return $this;
+    }
+
+    /**
+     * Reschedule labour.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function reschedule()
+    {
+        $config = $configModel->getWorkerConfigByName($this->getWorker());
+
+        if ($config->getRetries() >= $this->getRetries()) {
+            return $this->setAsFailed();
+        }
+
+        $when = $this->_getWhen($config);
+
+        $data = [
+            'status'        => self::STATUS_PENDING,
+            'execute_at'    => $when,
+            'retries'       => $this->getRetries() + 1,
+        ];
+
+        if ($config->getRule() == 'batch') {
+            $queueCollection = $this->getBatchCollection()
+                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
+                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+
+            $this->setChildLabour($queueCollection);
+
+            foreach ($queueCollection as $bundle) {
+                if ($bundle->getId() != $this->getId()) {
+                    $bundle->addData($data);
+
+                    $transaction->addObject($bundle);
+                }
+            }
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
 
         return $this;
     }

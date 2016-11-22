@@ -92,5 +92,17 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
     {
         return [];
     }
+
+    /**
+     * Throw Reschedule Exception.
+     *
+     * @param  string $message
+     *
+     * @throws Pulchritudinous_Queue_RescheduleException
+     */
+    protected function _throwRescheduleException($message)
+    {
+        throw new Pulchritudinous_Queue_RescheduleException($message);
+    }
 }
 
