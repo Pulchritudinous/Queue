@@ -378,7 +378,7 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     * Add worker configuration after data is loaded.
+     * Add worker configuration after data is saved.
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
