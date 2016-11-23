@@ -32,26 +32,21 @@
 <config>
     <pulchqueue>
         <worker>
-            <apply_catalog_rules>
-                <priority>100</priority>
-                <class>pulchqueue/worker_labour_catalogRule</class>
-                <rule>wait</rule>
-                <recurring>
-                    <pattern>*/1 * * * *</pattern>
-                </recurring>
-            </apply_catalog_rules>
-            <indexer>
-                <priority>50</priority>
-                <class>pulchqueue/worker_labour_indexer</class>
-                <rule>batch</rule>
-            </indexer>
-
-            <!-- Start adding test specific config -->
+            <!-- Start adding test specific configuration -->
+            <!-- THESE WILL ONLY BE AVAILABLE IF DEV MODE IS ENABLED -->
             <test_expected_exception>
                 <type>test</type>
                 <priority>500</priority>
                 <class>pulchqueue/worker_labour_test_exception</class>
             </test_expected_exception>
+
+            <test_expected_reschedule_exception>
+                <type>test</type>
+                <priority>500</priority>
+                <retries>1</retries>
+                <reschedule>3</reschedule>
+                <class>pulchqueue/worker_labour_test_reschedule_exception</class>
+            </test_expected_reschedule_exception>
 
             <test_successful_wait_work>
                 <type>test</type>
@@ -80,7 +75,17 @@
                 <priority>500</priority>
                 <class>pulchqueue/worker_labour_test_success</class>
             </test_successful_replace_work>
-            <!-- End adding test specific config -->
+
+            <test_successful_scheduled_work>
+                <type>test</type>
+                <rule>wait</rule>
+                <priority>500</priority>
+                <class>pulchqueue/worker_labour_test_success</class>
+                <recurring>
+                    <pattern>*/1 * * * *</pattern>
+                </recurring>
+            </test_successful_scheduled_work>
+            <!-- End adding test specific configuration -->
         </worker>
         <worker_default>
             <priority>100</priority>

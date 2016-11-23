@@ -76,13 +76,11 @@
                 <poll>2</poll>
             </queue>
             <recurring>
+                <!-- Number of minutes to generate schedule for labours -->
                 <plan_ahead_min>10</plan_ahead_min>
+                <!--  -->
                 <planning_resolution>1</planning_resolution>
             </recurring>
-            <worker>
-                <retries>1</retries>
-                <delay>0</delay>
-            </worker>
         </pulchqueue>
     </global>
 </config>

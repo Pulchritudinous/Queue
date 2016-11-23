@@ -25,13 +25,22 @@
 ?>
 <?php
 /**
- * Catalog Rule indexer worker.
+ *
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Worker_Labour_CatalogRule
+class Pulchritudinous_Queue_Model_Worker_Labour_Test_Exception
     extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
-    public function execute() {}
+    /**
+     *
+     *
+     * @throws Pulchritudinous_Queue_RescheduleException
+     */
+    public function execute()
+    {
+        $this->_throwRescheduleException('Expected exception');
+    }
 }
+
 
