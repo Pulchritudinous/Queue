@@ -25,13 +25,43 @@
 ?>
 <?php
 /**
- * Queue test case.
+ * Shell server test case.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Shell_ServerTest
     extends PHPUnit_Framework_TestCase
 {
+    /**
+     * Initial setup.
+     */
+    public static function setUpBeforeClass()
+    {
+        self::clearQueue();
+    }
+
+    /**
+     * Tear-down setup.
+     */
+    public function tearDown()
+    {
+        self::clearQueue();
+    }
+
+    /**
+     * Clear queue from all labours.
+     *
+     * @return Pulchritudinous_Queue_Model_QueueTest
+     */
+    public static function clearQueue()
+    {
+        $resource   = Mage::getSingleton('core/resource');
+        $adapter    = $resource->getConnection('core_write');
+        $table      = $resource->getTableName('pulchqueue/labour');
+
+        $adapter->delete($table);
+    }
+
     /**
      * Shell file location.
      *
@@ -55,6 +85,29 @@ class Pulchritudinous_Queue_Model_Shell_ServerTest
         $this->assertTrue($server->canStartNext(0), 'Unexpected result');
         $this->assertTrue($server->canStartNext($threads-1), 'Unexpected result');
         $this->assertFalse($server->canStartNext($threads), 'Unexpected result');
+    }
+
+    /**
+     * Test can start next process.
+     */
+    public function testAddRecurringLabours()
+    {
+        $server = Mage::getModel('pulchqueue/shell_server', $this->_getShellFile());
+
+        $model = Mage::getModel('core/flag', ['flag_code' => 'pulchqueue_last_schedule'])->loadSelf();
+
+        $model->setFlagData('')->save();
+
+        $server->addRecurringLabours();
+
+        $count = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->getSize();
+
+        $model = Mage::getModel('core/flag', ['flag_code' => 'pulchqueue_last_schedule'])->loadSelf();
+
+        $this->assertGreaterThan(0, $count);
+        $this->assertEquals(time(), $model->getFlagData());
     }
 }
 
