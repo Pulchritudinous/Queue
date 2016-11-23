@@ -121,9 +121,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $result = $adapter->update(
             $this->getMainTable(),
             $data,
-            [
-                'id' => $labour->getId(),
-            ]
+            ['id = ?' => $labour->getId()]
         );
 
         if ($result) {

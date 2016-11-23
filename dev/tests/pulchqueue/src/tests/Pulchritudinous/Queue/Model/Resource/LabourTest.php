@@ -113,13 +113,36 @@ class Pulchritudinous_Queue_Model_Resource_LabourTest
     {
         $queue      = Mage::getSingleton('pulchqueue/queue');
         $resource   = Mage::getResourceModel('pulchqueue/queue_labour');
-        $labour     = Mage::getModel('pulchqueue/labour');
 
         $labour = $queue->add('test_successful_wait_work');
 
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_wait_work');
+        $queue->add('test_successful_wait_work');
+
+        $origData = $labour->getData();
+
         $resource->updateField($labour, 'pid', 12345);
 
-        $this->assertEquals(12345, $labour->getPid(), 'Unexpected labour pid');
+        foreach ($origData as $key => $value) {
+            if ($key == 'pid') {
+                continue;
+            }
+
+            $this->assertEquals($value, $labour->getData($key), 'Unexpected data is change');
+        }
+
+        $collection = Mage::getModel('pulchqueue/labour')
+            ->getCollection();
+
+        foreach ($collection as $item) {
+            if ($item->getId() == $labour->getId()) {
+                $this->assertEquals(12345, $item->getPid(), 'Unexpected labour pid');
+            } else {
+                $this->assertNull($item->getPid(), 'Unexpected labour pid');
+            }
+        }
     }
 
     /**
