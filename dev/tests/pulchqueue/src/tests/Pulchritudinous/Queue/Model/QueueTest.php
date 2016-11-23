@@ -281,6 +281,25 @@ class Pulchritudinous_Queue_Model_QueueTest
     }
 
     /**
+     * Test job that throws an reschedule exception and is cached within
+     * labour execution.
+     */
+    public function testAddRescheduleExceptionLabourToQueue()
+    {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $queue          = Mage::getSingleton('pulchqueue/queue');
+        $config         = $configModel->getWorkerConfigByName('test_expected_reschedule_exception');
+        $labour         = $queue->add('test_expected_reschedule_exception');
+        $when           = $this->_getWhen($config);
+
+        $labour->execute();
+
+        $this->assertEquals('pending', $labour->getStatus(), 'Labour status must be "pending"');
+        $this->assertEquals(1, $labour->getRetries(), 'Labour retries should be "1"');
+        $this->assertEquals($when, $labour->getExecuteAt(), 'Unexpected labour execute at date');
+    }
+
+    /**
      * Test job that throws an exception and is cached within labour execution.
      */
     public function testAddExceptionLabourToQueue()

@@ -120,7 +120,7 @@ class Pulchritudinous_Queue_Model_Labour
         try {
             if (!($this->_workerConfig instanceof Varien_Object)) {
                 Mage::throwException(
-                    "Unable to execute labour with ID {$labour->getId()} and worker code {$this->getWorker()}"
+                    "Unable to execute labour with ID {$this->getId()} and worker code {$this->getWorker()}"
                 );
             }
 
@@ -163,9 +163,11 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function reschedule()
     {
-        $config = $configModel->getWorkerConfigByName($this->getWorker());
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfigByName($this->getWorker());
+        $currentRetries = ($this->getRetries()) ? $this->getRetries() : 0;
 
-        if ($config->getRetries() >= $this->getRetries()) {
+        if ($config->getRetries() < $currentRetries) {
             return $this->setAsFailed();
         }
 
@@ -174,8 +176,10 @@ class Pulchritudinous_Queue_Model_Labour
         $data = [
             'status'        => self::STATUS_PENDING,
             'execute_at'    => $when,
-            'retries'       => $this->getRetries() + 1,
+            'retries'       => $currentRetries + 1,
         ];
+
+        $transaction = Mage::getModel('core/resource_transaction');
 
         if ($config->getRule() == 'batch') {
             $queueCollection = $this->getBatchCollection()
@@ -371,6 +375,18 @@ class Pulchritudinous_Queue_Model_Labour
         $this->applyWorkerConfig();
 
         return parent::_afterLoad();
+    }
+
+    /**
+     * Add worker configuration after data is loaded.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _afterSave()
+    {
+        $this->applyWorkerConfig();
+
+        return parent::_afterSave();
     }
 
     /**
