@@ -196,13 +196,15 @@ class Pulchritudinous_Queue_Shell
 
         echo "Closing open processes\n";
 
-        while ($processes->count()) {
-            if ($processes->count() < $configData->getThreads()) {
-                break;
-            }
+        if ($processes) {
+            while ($processes->count()) {
+                if ($processes->count() < $configData->getThreads()) {
+                    break;
+                }
 
-            self::validateProcesses();
-            usleep(500);
+                self::validateProcesses();
+                usleep(500);
+            }
         }
 
         echo "Finished!\n";

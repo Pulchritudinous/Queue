@@ -25,7 +25,7 @@
 ?>
 <?php
 /**
- *
+ * Shell model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
@@ -39,7 +39,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
     protected $_shellFile;
 
     /**
-     *
+     * Engine bin.
      *
      * @var string
      */
@@ -59,7 +59,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     public function __construct($shellfile)
     {
-        if (file_exists($shellfile)) {
+        if (!file_exists($shellfile)) {
             Mage::throwException('Shell file does not exist.');
         }
 
@@ -263,10 +263,14 @@ class Pulchritudinous_Queue_Model_Shell_Server
         return $runTimes;
     }
 
-
-    public function closeServer()
+    /**
+     * Closing server.
+     *
+     * @return Pulchritudinous_Queue_Model_Shell_Server
+     */
+    protected function _closeServer()
     {
-
+        return $this;
     }
 }
 
