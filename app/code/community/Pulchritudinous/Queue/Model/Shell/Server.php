@@ -192,11 +192,15 @@ class Pulchritudinous_Queue_Model_Shell_Server
 
                 $options['delay'] = $date;
 
-                Mage::getModel('pulchqueue/queue')->add(
-                    (string) $worker->getWorkerName(),
-                    $payload,
-                    $options
-                );
+                try {
+                    Mage::getModel('pulchqueue/queue')->add(
+                        (string) $worker->getWorkerName(),
+                        $payload,
+                        $options
+                    );
+                } catch (Exception $e) {
+                    Mage::logException($e);
+                }
             }
         }
 
