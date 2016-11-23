@@ -29,18 +29,37 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Worker_Labour_Test_Reschedule_Exception
+class Pulchritudinous_Queue_Model_Worker_Labour_Test_Reschedule_Success
     extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
     /**
      *
      *
-     * @throws Pulchritudinous_Queue_RescheduleException
+     * @throws Mage_Core_Exception
      */
     public function execute()
     {
-        $this->_throwRescheduleException('Expected exception');
+    }
+
+    /**
+     * Returns options to pass to $queue->add() function when scheduling
+     * recurring jobs.
+     *
+     * Expected format:
+     * [
+     *      "payload" => [...],
+     *      "options" => [...]
+     * ]
+     * @see Pulchritudinous_Queue_Model_Queue::add()
+     *
+     * @return array
+     */
+    public function getRecurringOptions()
+    {
+        return [
+            'payload' => ['id' => 54321],
+            'options' => ['priority' => 12],
+        ];
     }
 }
-
 
