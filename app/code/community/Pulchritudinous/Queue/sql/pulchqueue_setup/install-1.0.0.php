@@ -148,6 +148,20 @@ $table = $this->getConnection()
         ),
         ['parent_id']
     )
+    ->addIndex(
+        $this->getIdxName(
+            $tableName,
+            ['worker']
+        ),
+        ['worker']
+    )
+    ->addIndex(
+        $this->getIdxName(
+            $tableName,
+            ['identity']
+        ),
+        ['identity']
+    )
     ->addForeignKey(
         $this->getFkName(
             $tableName,
