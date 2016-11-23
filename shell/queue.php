@@ -17,6 +17,13 @@ class Pulchritudinous_Queue_Shell
     protected $_shellFile;
 
     /**
+     * Server model.
+     *
+     * @var Pulchritudinous_Queue_Model_Shell_Server
+     */
+    public static $server;
+
+    /**
      * List of executed processes.
      *
      * @var Varien_Data_Collection
@@ -29,13 +36,6 @@ class Pulchritudinous_Queue_Shell
      * @var Varien_Object
      */
     public static $configData;
-
-    /**
-     * Last time scheduling happened
-     *
-     * @param int
-     */
-    public static $lastSchedule;
 
     /**
      * Initialize application and parse input parameters
@@ -81,6 +81,8 @@ class Pulchritudinous_Queue_Shell
 
     /**
      * Run labour.
+     *
+     * @param integer
      */
     protected function _runLabour($id)
     {
@@ -99,26 +101,22 @@ class Pulchritudinous_Queue_Shell
      */
     protected function _runServer()
     {
-        $count          = 0;
-        $binfile        = (isset($_SERVER['_'])) ? $_SERVER['_'] : 'php';
-        $shellfile      = $this->_shellFile;
-        $cwd            = sys_get_temp_dir();
-        $logDir         = Mage::getBaseDir('var') . DS . 'log';
-        $errorFile      = $logDir . DS . Mage::getStoreConfig('dev/log/exception_file');
-        $queue          = Mage::getSingleton('pulchqueue/queue');
-        $configModel    = Mage::getSingleton('pulchqueue/config');
-        $configData     = $configModel->getQueueConfig();
+        $server             = Mage::getModel('pulchqueue/shell_server', $this->_shellFile);
+        $queue              = Mage::getModel('pulchqueue/queue');
+        $configModel        = Mage::getSingleton('pulchqueue/config');
+        $configData         = $configModel->getQueueConfig();
 
         self::$configData   = $configData;
+        self::$server       = $server;
         self::$processes    = new Varien_Data_Collection();
+        $processes          = self::$processes;
 
         while (true) {
             self::validateProcesses();
-            self::addRecurringJobs($configData);
 
-            $processes = self::$processes;
+            $server->addRecurringLabours();
 
-            if (!$this->_canStartNext()) {
+            if (!$server->canStartNext($processes->count())) {
                 sleep($configData->getPoll());
                 continue;
             }
@@ -130,17 +128,7 @@ class Pulchritudinous_Queue_Shell
                 continue;
             }
 
-            $spec = [
-               ['pipe', 'r'],
-               ['pipe', 'w'],
-               ['file', $errorFile, 'a']
-            ];
-
-            $command    = "{$binfile} {$shellfile} --labour {$labour->getId()}";
-            $resource   = proc_open($command, $spec, $pipes, $cwd, null);
-
-            stream_set_blocking($pipes[0], 0);
-            stream_set_blocking($pipes[1], 0);
+            $resource = $server->startChildProcess($labour);
 
             if (self::validateProcess($resource)) {
                 $status = proc_get_status($resource);
@@ -175,101 +163,9 @@ class Pulchritudinous_Queue_Shell
         foreach ($processes as $process) {
             if (!self::validateProcess($process->getResource())) {
                 proc_close($process->getResource());
-
-                $labour->setAsUnknown();
                 $processes->removeItemByKey($process->getId());
             }
         }
-    }
-
-    /**
-     *
-     *
-     *
-     */
-    public static function addRecurringJobs($config)
-    {
-        $recurringConfig = Mage::getSingleton('pulchqueue/config')->getRecurringConfig();
-
-        $last       = self::$lastSchedule;
-        $itsTime    = ($last + $recurringConfig->getPlanAheadMin() * 60) <= time();
-
-        if (!$itsTime) {
-            return;
-        }
-
-        self::$lastSchedule = time();
-
-        $workers    = Mage::getSingleton('pulchqueue/config')->getWorkers();
-
-        foreach ($workers as $worker) {
-            $rec = $worker->getRecurring();
-
-            if (!isset($rec['pattern'])) {
-                continue;
-            }
-
-            $pattern    = $rec['pattern'];
-            $runTimes   = self::generateRunDates($pattern);
-
-            if ($runTimes) {
-                $workerModel = Mage::getSingleton('pulchqueue/worker_config')
-                    ->loadWorkerClass($worker);
-
-                if (!$workerModel) {
-                    continue;
-                }
-
-                foreach ($runTimes as $date) {
-                    $opt        = new Varien_Object($worker->getWorkerModel()->getRecurringOptions());
-                    $options    = $opt->getOptions();
-                    ($payload = $opt->getPayload()) || ($payload = []);
-
-                    if (!$options) {
-                        $options = [];
-                    }
-
-                    $options['delay'] = $date;
-
-                    Mage::getModel('pulchqueue/queue')->add(
-                        (string)$worker->getWorkerName(),
-                        $payload,
-                        $options
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * Generate date times to run job at
-     *
-     * @param string $pattern
-     *
-     * @return array
-     */
-    public static function generateRunDates($pattern)
-    {
-        $recurringConfig = Mage::getSingleton('pulchqueue/config')->getRecurringConfig();
-
-        $scheduler  = Mage::getModel('cron/schedule');
-        $time       = time();
-        $timeAhead  = $time + $recurringConfig->getPlanAheadMin() * 60;
-        $interval   = $recurringConfig->getPlanningResolution() * 60;
-
-        $scheduler->setCronExpr($pattern);
-
-        $runTimes = [];
-
-        for ($time; $time < $timeAhead; $time += $interval) {
-            $shouldAdd = $scheduler->trySchedule($time);
-            if ($shouldAdd) {
-                $date = new Zend_Date($time, Zend_Date::TIMESTAMP);
-                $runTimes[] = $date;
-            }
-        }
-
-        return $runTimes;
     }
 
     /**
@@ -287,23 +183,6 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
-     * Check if it is possible to start next labour process.
-     *
-     * @return boolean
-     */
-    protected function _canStartNext()
-    {
-        $configData = self::$configData;
-        $processes  = self::$processes;
-
-        if ($processes->count() < $configData->getThreads()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Make sure all labours is finished before closing the server.
      */
     public static function exitStrategy()
@@ -311,7 +190,9 @@ class Pulchritudinous_Queue_Shell
         $configData = self::$configData;
         $processes  = self::$processes;
 
-        $configData->setThreads(0);
+        if ($configData) {
+            $configData->setThreads(0);
+        }
 
         echo "Closing open processes\n";
 
@@ -345,5 +226,4 @@ USAGE;
 
 $shell = new Pulchritudinous_Queue_Shell();
 $shell->run();
-
 
