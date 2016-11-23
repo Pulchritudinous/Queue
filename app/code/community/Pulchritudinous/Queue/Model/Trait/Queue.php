@@ -79,7 +79,7 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
             if (is_numeric($delay)) {
                 $when = date('Y-m-d H:i:s', $time + $delay);
             } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString("Y-m-d H:mm:s");
+                $when = $delay->toString("yyyy-MM-dd HH:mm:ss");
             } elseif (is_numeric($config->getDelay())) {
                 $when = date('Y-m-d H:i:s', $time + $config->getDelay());
             }
