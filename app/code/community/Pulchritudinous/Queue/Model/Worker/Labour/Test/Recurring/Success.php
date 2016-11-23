@@ -29,7 +29,7 @@
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Worker_Labour_Test_Reschedule_Success
+class Pulchritudinous_Queue_Model_Worker_Labour_Test_Recurring_Success
     extends Pulchritudinous_Queue_Model_Worker_Abstract
 {
     /**

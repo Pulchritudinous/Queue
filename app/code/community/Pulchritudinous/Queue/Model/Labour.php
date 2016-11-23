@@ -171,7 +171,7 @@ class Pulchritudinous_Queue_Model_Labour
             return $this->setAsFailed();
         }
 
-        $when = $this->_getWhen($config);
+        $when = $this->_getWhen($config, $config->getReschedule());
 
         $data = [
             'status'        => self::STATUS_PENDING,

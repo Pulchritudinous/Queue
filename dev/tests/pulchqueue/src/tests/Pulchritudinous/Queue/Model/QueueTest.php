@@ -290,13 +290,23 @@ class Pulchritudinous_Queue_Model_QueueTest
         $queue          = Mage::getSingleton('pulchqueue/queue');
         $config         = $configModel->getWorkerConfigByName('test_expected_reschedule_exception');
         $labour         = $queue->add('test_expected_reschedule_exception');
-        $when           = $this->_getWhen($config);
+        $when           = $this->_getWhen($config, $config->getReschedule());
 
         $labour->execute();
 
         $this->assertEquals('pending', $labour->getStatus(), 'Labour status must be "pending"');
         $this->assertEquals(1, $labour->getRetries(), 'Labour retries should be "1"');
         $this->assertEquals($when, $labour->getExecuteAt(), 'Unexpected labour execute at date');
+
+        $nextLabour = $queue->receive();
+
+        $this->assertFalse($nextLabour, 'Unexpected worker in received item');
+
+        sleep(3.5);
+
+        $nextLabour = $queue->receive();
+
+        $this->assertEquals($labour->getId(), $nextLabour->getId(), 'Unexpected worker in received item');
     }
 
     /**
