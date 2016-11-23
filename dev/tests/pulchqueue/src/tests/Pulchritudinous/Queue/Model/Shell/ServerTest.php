@@ -88,15 +88,14 @@ class Pulchritudinous_Queue_Model_Shell_ServerTest
     }
 
     /**
-     * Test can start next process.
+     * Test recurring labour.
      */
     public function testAddRecurringLabours()
     {
-        $server = Mage::getModel('pulchqueue/shell_server', $this->_getShellFile());
-
         $model = Mage::getModel('core/flag', ['flag_code' => 'pulchqueue_last_schedule'])->loadSelf();
-
         $model->setFlagData('')->save();
+
+        $server = Mage::getModel('pulchqueue/shell_server', $this->_getShellFile());
 
         $server->addRecurringLabours();
 
@@ -107,7 +106,13 @@ class Pulchritudinous_Queue_Model_Shell_ServerTest
         $model = Mage::getModel('core/flag', ['flag_code' => 'pulchqueue_last_schedule'])->loadSelf();
 
         $this->assertGreaterThan(0, $count);
-        $this->assertEquals(time(), $model->getFlagData());
+        $this->assertNotEmpty($model->getFlagData());
+
+        $labour = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->getFirstItem();
+
+        $this->assertEquals(['id' => 54321], $labour->getPayload(), 'Unexpected worker payload');
     }
 }
 
