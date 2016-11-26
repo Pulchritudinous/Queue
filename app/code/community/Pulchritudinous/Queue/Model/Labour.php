@@ -118,7 +118,7 @@ class Pulchritudinous_Queue_Model_Labour
     public function execute()
     {
         try {
-            if (!($this->_workerConfig instanceof Varien_Object)) {
+            if (!($this->getWorkerConfig() instanceof Varien_Object)) {
                 Mage::throwException(
                     "Unable to execute labour with ID {$this->getId()} and worker code {$this->getWorker()}"
                 );
@@ -145,7 +145,7 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _execute()
     {
-        $config = $this->_workerConfig;
+        $config = $this->getWorkerConfig();
         $model  = $config->getWorkerModel();
 
         $model
@@ -363,6 +363,16 @@ class Pulchritudinous_Queue_Model_Labour
         }
 
         return $data;
+    }
+
+    /**
+     * Get worker configuration.
+     *
+     * @return Varien_Object|false
+     */
+    public function getWorkerConfig()
+    {
+        return $this->_workerConfig;
     }
 
     /**
