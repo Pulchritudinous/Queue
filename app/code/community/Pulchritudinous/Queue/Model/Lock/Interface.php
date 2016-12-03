@@ -25,67 +25,42 @@
 ?>
 <?php
 /**
- * Queue configuration model.
+ * Lock storage interface.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Config
+interface Pulchritudinous_Queue_Model_Lock_Interface
 {
     /**
-     * Returns queue configuration.
-     *
-     * @return Varien_Object
+     * Timeout for lock get.
      */
-    public function getQueueConfig()
-    {
-        $config = Mage::getConfig()->getNode('global/pulchqueue/queue');
-
-        if ($config) {
-            $config = $config->asArray();
-        } else {
-            $config = [];
-        }
-
-        return new Varien_Object($config);
-    }
+    const LOCK_GET_TIMEOUT = 5;
 
     /**
-     * Returns recurring configuration.
+     * Set lock.
      *
-     * @return Varien_Object
+     * @param  string $name
+     *
+     * @return boolean
      */
-    public function getRecurringConfig()
-    {
-        $config = Mage::getConfig()->getNode('global/pulchqueue/recurring');
-
-        if ($config) {
-            $config = $config->asArray();
-        } else {
-            $config = [];
-        }
-
-        return new Varien_Object($config);
-    }
+    public function setLock($name);
 
     /**
-     * Get used lock storage.
+     * Release lock
      *
-     * @return string
+     * @param  string $name
+     *
+     * @return boolean
      */
-    public function getUsedLockStorage()
-    {
-        $config = (string) Mage::getConfig()->getNode('global/pulchqueue/lock_storage');
+    public function releaseLock($name);
 
-        $valid = [
-            Pulchritudinous_Queue_Model_Lock::STORAGE_DB,
-            Pulchritudinous_Queue_Model_Lock::STORAGE_FILE,
-        ];
-
-        if (in_array($config, strtolower($valid))) {
-            return strtolower($valid);
-        }
-
-        return Pulchritudinous_Queue_Model_Lock::STORAGE_DB;
-    }
+    /**
+     * Is lock exists.
+     *
+     * @param  string $name
+     *
+     * @return boolean
+     */
+    public function isLocked($name);
 }
 

@@ -114,6 +114,16 @@ class Pulchritudinous_Queue_Model_Shell_Server
     }
 
     /**
+     * Check if server is allowed to start.
+     *
+     * @return boolean
+     */
+    protected function _canStart()
+    {
+        return Mage::getSingleton('pulchqueue/lock')->setLock();
+    }
+
+    /**
      * Check if another process is allowed to start.
      *
      * @return boolean
@@ -128,16 +138,6 @@ class Pulchritudinous_Queue_Model_Shell_Server
         }
 
         return false;
-    }
-
-    /**
-     * Check if server is allowed to start.
-     *
-     * @return boolean
-     */
-    protected function _canStart()
-    {
-        return true;
     }
 
     /**
@@ -274,7 +274,17 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     protected function _closeServer()
     {
+        Mage::getSingleton('pulchqueue/lock')->releaseLock();
+
         return $this;
+    }
+
+    /**
+     * Destruction configuration.
+     */
+    public function __destruct()
+    {
+        $this->_closeServer();
     }
 }
 

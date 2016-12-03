@@ -25,67 +25,79 @@
 ?>
 <?php
 /**
- * Queue configuration model.
+ * Resources helper model.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Config
+class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
+    extends Mage_Core_Model_Resource_Db_Abstract
+    implements Pulchritudinous_Queue_Model_Lock_Interface
 {
     /**
-     * Returns queue configuration.
+     * Set lock.
      *
-     * @return Varien_Object
+     * @param  string $name
+     *
+     * @return boolean
      */
-    public function getQueueConfig()
+    public function setLock($name)
     {
-        $config = Mage::getConfig()->getNode('global/pulchqueue/queue');
-
-        if ($config) {
-            $config = $config->asArray();
-        } else {
-            $config = [];
-        }
-
-        return new Varien_Object($config);
+        return (boolean) $this->_getWriteAdapter()->query(
+            'SELECT GET_LOCK(?, ?);',
+            [$name, self::LOCK_GET_TIMEOUT]
+        )->fetchColumn();
     }
 
     /**
-     * Returns recurring configuration.
+     * Release lock
      *
-     * @return Varien_Object
+     * @param  string $name
+     *
+     * @return boolean
      */
-    public function getRecurringConfig()
+    public function releaseLock($name)
     {
-        $config = Mage::getConfig()->getNode('global/pulchqueue/recurring');
-
-        if ($config) {
-            $config = $config->asArray();
-        } else {
-            $config = [];
-        }
-
-        return new Varien_Object($config);
+        return (boolean) $this->_getWriteAdapter()->query(
+            'SELECT RELEASE_LOCK(?);',
+            [$name]
+        )->fetchColumn();
     }
 
     /**
-     * Get used lock storage.
+     * Is lock exists.
+     *
+     * @param  string $name
+     *
+     * @return boolean
+     */
+    public function isLocked($name)
+    {
+        return (boolean) $this->_getWriteAdapter()->query(
+            'IS_USED_LOCK(?);',
+            [$name]
+        )->fetchColumn();
+    }
+
+    /**
+     * Write adapter.
+     *
+     * @return Varien_Db_Adapter_Pdo_Mysql
+     */
+    public function getWriteAdapter()
+    {
+        return $this->_getWriteAdapter();
+    }
+
+    /**
+     * Get table name.
+     *
+     * @param  string $name
      *
      * @return string
      */
-    public function getUsedLockStorage()
+    public function getTable($name)
     {
-        $config = (string) Mage::getConfig()->getNode('global/pulchqueue/lock_storage');
-
-        $valid = [
-            Pulchritudinous_Queue_Model_Lock::STORAGE_DB,
-            Pulchritudinous_Queue_Model_Lock::STORAGE_FILE,
-        ];
-
-        if (in_array($config, strtolower($valid))) {
-            return strtolower($valid);
-        }
-
-        return Pulchritudinous_Queue_Model_Lock::STORAGE_DB;
+        return Mage::getSingleton('core/resource')->getTableName($name);
     }
 }
 

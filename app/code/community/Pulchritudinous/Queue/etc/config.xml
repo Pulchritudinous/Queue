@@ -69,6 +69,15 @@
             </pulchqueue>
         </blocks>
         <pulchqueue>
+            <!--
+            Locks is used to prevent to server from running simultaneously.
+            Valid options is:
+            - file
+            - db
+
+            Recommended to user 'db' in a multi web-server setup.
+            -->
+            <lock_storage>db</lock_storage>
             <queue>
                 <!-- Number of simultaneous processes -->
                 <threads>2</threads>

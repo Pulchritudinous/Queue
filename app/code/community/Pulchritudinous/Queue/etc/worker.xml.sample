@@ -44,11 +44,11 @@
                 batch   - Will collect other jobs with the same worker name to be run in a single worker.
                 -->
                 <rule>wait</rule>
-                <!-- Add a minimum of delay before the job may be executed -->
+                <!-- Add a minimum seconds of delay before the job may be executed -->
                 <delay>0</delay>
                 <!-- Number of retries on failure -->
                 <retries>0</retries>
-                <!-- Reschedule the job after an amount of milliseconds on failure -->
+                <!-- Reschedule the job after an amount of seconds on failure -->
                 <reschedule>0</reschedule>
                 <!-- Logging destination. The default is pulchqueue.log -->
                 <logfile>unique_worker_name.log</logfile>
