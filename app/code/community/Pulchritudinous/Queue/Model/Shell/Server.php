@@ -53,6 +53,13 @@ class Pulchritudinous_Queue_Model_Shell_Server
     protected $_lastSchedule;
 
     /**
+     * Lock manager.
+     *
+     * @var Pulchritudinous_Queue_Model_Lock
+     */
+    protected $_lockStorage;
+
+    /**
      * Initial configuration.
      *
      * @param  string $shellfile
@@ -120,7 +127,21 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     protected function _canStart()
     {
-        return Mage::getSingleton('pulchqueue/lock')->setLock();
+        return $this->_getLockStorage()->setLock();
+    }
+
+    /**
+     * Lock storage manager.
+     *
+     * @return Pulchritudinous_Queue_Model_Lock
+     */
+    protected function _getLockStorage()
+    {
+        if (!$this->_lockStorage) {
+            $thisl->_lockStorage = Mage::getSingleton('pulchqueue/lock');
+        }
+
+        return $this->_lockStorage;
     }
 
     /**
@@ -274,7 +295,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     protected function _closeServer()
     {
-        Mage::getSingleton('pulchqueue/lock')->releaseLock();
+        $this->_getLockStorage()->releaseLock();
 
         return $this;
     }
