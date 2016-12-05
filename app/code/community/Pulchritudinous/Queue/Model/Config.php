@@ -75,14 +75,13 @@ class Pulchritudinous_Queue_Model_Config
     public function getUsedLockStorage()
     {
         $config = (string) Mage::getConfig()->getNode('global/pulchqueue/lock_storage');
-
-        $valid = [
+        $valid  = [
             Pulchritudinous_Queue_Model_Lock::STORAGE_DB,
             Pulchritudinous_Queue_Model_Lock::STORAGE_FILE,
         ];
 
-        if (in_array($config, strtolower($valid))) {
-            return strtolower($valid);
+        if (in_array(strtolower($config), $valid)) {
+            return strtolower($config);
         }
 
         return Pulchritudinous_Queue_Model_Lock::STORAGE_DB;

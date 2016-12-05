@@ -138,7 +138,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
     protected function _getLockStorage()
     {
         if (!$this->_lockStorage) {
-            $thisl->_lockStorage = Mage::getSingleton('pulchqueue/lock');
+            $this->_lockStorage = Mage::getSingleton('pulchqueue/lock');
         }
 
         return $this->_lockStorage;

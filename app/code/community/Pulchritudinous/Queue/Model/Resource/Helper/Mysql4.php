@@ -30,7 +30,7 @@
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
-    extends Mage_Core_Model_Resource_Db_Abstract
+    extends Mage_Core_Model_Resource_Helper_Mysql4
     implements Pulchritudinous_Queue_Model_Lock_Interface
 {
     /**
@@ -42,7 +42,7 @@ class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
      */
     public function setLock($name)
     {
-        return (boolean) $this->_getWriteAdapter()->query(
+        return (boolean) $this->getWriteAdapter()->query(
             'SELECT GET_LOCK(?, ?);',
             [$name, self::LOCK_GET_TIMEOUT]
         )->fetchColumn();
@@ -57,7 +57,7 @@ class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
      */
     public function releaseLock($name)
     {
-        return (boolean) $this->_getWriteAdapter()->query(
+        return (boolean) $this->getWriteAdapter()->query(
             'SELECT RELEASE_LOCK(?);',
             [$name]
         )->fetchColumn();
@@ -72,7 +72,7 @@ class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
      */
     public function isLocked($name)
     {
-        return (boolean) $this->_getWriteAdapter()->query(
+        return (boolean) $this->getWriteAdapter()->query(
             'IS_USED_LOCK(?);',
             [$name]
         )->fetchColumn();
