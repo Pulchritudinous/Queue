@@ -113,8 +113,8 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
+        $pageNr             = 0;
         $runningCollection  = $this->getRunning();
-        $queueCollection    = $this->_getQueueCollection();
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
@@ -122,18 +122,27 @@ class Pulchritudinous_Queue_Model_Queue
             $running[$identity] = $identity;
         }
 
-        foreach ($queueCollection as $labour) {
-            $config     = $configModel->getWorkerConfigByName($labour->getWorker());
-            $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
+        do {
+            $queueCollection = $this->_getQueueCollection()
+                ->setPageSize(50)
+                ->setCurPage($pageNr)
+                ->load();
 
-            if ($config->getRule() == 'wait') {
-                if (isset($running[$identity])) {
-                    continue;
+            foreach ($queueCollection as $labour) {
+                $config     = $configModel->getWorkerConfigByName($labour->getWorker());
+                $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
+
+                if ($config->getRule() == 'wait') {
+                    if (isset($running[$identity])) {
+                        continue;
+                    }
                 }
+
+                return $this->_beforeReturn($labour, $config);
             }
 
-            return $this->_beforeReturn($labour, $config);
-        }
+            $pageNr++;
+        } while ($queueCollection->count());
 
         return false;
     }
