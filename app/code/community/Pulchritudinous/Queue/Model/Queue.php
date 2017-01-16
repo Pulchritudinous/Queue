@@ -107,7 +107,7 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Receive next job from the queue.
      *
-     * @return Varien_Object|false
+     * @return Pulchritudinous_Queue_Model_Labour|false
      */
     public function receive()
     {
