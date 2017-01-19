@@ -1,5 +1,5 @@
 <?php
-require_once 'abstract.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'abstract.php';
 
 /**
  * Shell for handling queue and labour execution.
