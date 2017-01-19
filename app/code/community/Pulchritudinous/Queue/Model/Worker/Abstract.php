@@ -48,6 +48,20 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
     protected $_config;
 
     /**
+     * Payload object.
+     *
+     * @var Varien_Object
+     */
+    protected $_payload;
+
+    /**
+     * Child labour collection.
+     *
+     * @var Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
+     */
+    protected $_childLabour;
+
+    /**
      * Set labour model to worker.
      *
      * @param  Pulchritudinous_Queue_Model_Labour $labour
@@ -56,13 +70,23 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      */
     public function setLabour(Pulchritudinous_Queue_Model_Labour $labour)
     {
-        $this->_labour = $this;
+        $this->_labour = $labour;
 
         return $this;
     }
 
     /**
-     * Set labour model to worker.
+     * Get labour object.
+     *
+     * @return Varien_Object
+     */
+    protected function _getLabour()
+    {
+        return $this->_labour;
+    }
+
+    /**
+     * Set labour configuration to worker.
      *
      * @param  Varien_Object $config
      *
@@ -70,9 +94,67 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      */
     public function setConfig(Varien_Object $config)
     {
-        $this->_labour = $this;
+        $this->_config = $config;
 
         return $this;
+    }
+
+    /**
+     * Get labour configuration object.
+     *
+     * @return Varien_Object
+     */
+    protected function _getConfig()
+    {
+        return $this->_config;
+    }
+
+    /**
+     * Set payload object to worker.
+     *
+     * @param  Varien_Object $config
+     *
+     * @return Pulchritudinous_Queue_Model_Worker_Abstract
+     */
+    public function setPayload(Varien_Object $payload)
+    {
+        $this->_payload = $payload;
+
+        return $this;
+    }
+
+    /**
+     * Get payload object.
+     *
+     * @return Varien_Object
+     */
+    protected function _getPayload()
+    {
+        return $this->_payload;
+    }
+
+    /**
+     * Set child labour collection.
+     *
+     * @param  Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $children
+     *
+     * @return Pulchritudinous_Queue_Model_Worker_Abstract
+     */
+    public function setChildLabour(Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $children = null)
+    {
+        $this->_childLabour = $children;
+
+        return $this;
+    }
+
+    /**
+     * Get child labour collection.
+     *
+     * @return Pulchritudinous_Queue_Model_Worker_Abstract|null
+     */
+    protected function _getChildLabour()
+    {
+        return $this->_childLabour;
     }
 
     /**
