@@ -132,6 +132,10 @@ class Pulchritudinous_Queue_Model_Queue
                 $config     = $configModel->getWorkerConfigByName($labour->getWorker());
                 $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
+                if (!$config) {
+                    continue;
+                }
+
                 if ($config->getRule() == 'wait') {
                     if (isset($running[$identity])) {
                         continue;
