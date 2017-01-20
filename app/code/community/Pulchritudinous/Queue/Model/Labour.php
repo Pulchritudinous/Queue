@@ -84,9 +84,7 @@ class Pulchritudinous_Queue_Model_Labour
     /**
      * Queue model trait.
      */
-    use Pulchritudinous_Queue_Model_Trait_Queue {
-        _getWhen  as protected;
-    }
+    use Pulchritudinous_Queue_Model_Trait_Queue;
 
     /**
      * Initial configuration.
