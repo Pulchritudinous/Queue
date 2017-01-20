@@ -145,7 +145,7 @@ class Pulchritudinous_Queue_Model_Labour
     {
         $config         = $this->getWorkerConfig();
         $model          = $config->getWorkerModel();
-        $payload        = new Varien_Object($this->getPayload());
+        $payload        = $this->getPayload(true);
         $childLabour    = $this->getChildLabour();
 
         $model
@@ -349,14 +349,20 @@ class Pulchritudinous_Queue_Model_Labour
     /**
      * Get payload.
      *
-     * @return array
+     * @param  boolean $asObject
+     *
+     * @return array|Varien_Object
      */
-    public function getPayload()
+    public function getPayload($asObject = false)
     {
         $data = $this->getData('payload');
 
         if (is_string($data)) {
             $data = unserialize($data);
+        }
+
+        if ($asObject == true) {
+            $data = new Varien_Object($data);
         }
 
         return $data;
