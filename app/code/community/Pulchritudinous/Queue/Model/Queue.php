@@ -165,12 +165,19 @@ class Pulchritudinous_Queue_Model_Queue
      */
     protected function _getQueueCollection()
     {
-        return Mage::getModel('pulchqueue/labour')
+        $oldzone = @date_default_timezone_get();
+        date_default_timezone_set('UTC');
+
+        $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
             ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
             ->addFieldToFilter('execute_at', ['lteq' => now()])
             ->setOrder('priority', 'ASC')
             ->setOrder('created_at', 'ASC');
+
+        date_default_timezone_set($oldzone);
+
+        return $collection;
     }
 
     /**
