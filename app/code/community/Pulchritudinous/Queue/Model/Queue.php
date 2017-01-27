@@ -122,9 +122,15 @@ class Pulchritudinous_Queue_Model_Queue
             $running[$identity] = $identity;
         }
 
+        $queueCollection = $this->_getQueueCollection();
+
+        $queueCollection->setPageSize(50);
+
+        $pages  = $queueCollection->getLastPageNumber();
+        $pageNr = 1;
+
         do {
-            $queueCollection = $this->_getQueueCollection()
-                ->setPageSize(50)
+            $queueCollection
                 ->setCurPage($pageNr)
                 ->load();
 
@@ -146,7 +152,8 @@ class Pulchritudinous_Queue_Model_Queue
             }
 
             $pageNr++;
-        } while ($queueCollection->count());
+            $queueCollection->clear();
+        } while ($pageNr <= $pages);
 
         return false;
     }
