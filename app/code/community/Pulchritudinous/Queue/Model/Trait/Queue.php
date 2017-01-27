@@ -72,6 +72,10 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
      */
     protected function _getWhen(Varien_Object $config, $delay = false)
     {
+        $oldzone = @date_default_timezone_get();
+
+        date_default_timezone_set('UTC');
+
         $time           = time();
         $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
 
@@ -84,6 +88,8 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
                 $when = date('Y-m-d H:i:s', $time + $config->getDelay());
             }
         }
+
+        date_default_timezone_set($oldzone);
 
         return $when;
     }
