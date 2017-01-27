@@ -121,7 +121,10 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
         $result = $adapter->update(
             $this->getMainTable(),
             $data,
-            ['id = ?' => $labour->getId()]
+            new Zend_Db_Expr(
+                $adapter->quoteInto('id = ?', (int) $labour->getId()) . ' OR ' .
+                $adapter->quoteInto('parent_id = ?', (int) $labour->getId())
+            )
         );
 
         if ($result) {
