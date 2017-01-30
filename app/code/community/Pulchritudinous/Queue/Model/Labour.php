@@ -84,9 +84,7 @@ class Pulchritudinous_Queue_Model_Labour
     /**
      * Queue model trait.
      */
-    use Pulchritudinous_Queue_Model_Trait_Queue {
-        _getWhen  as protected;
-    }
+    use Pulchritudinous_Queue_Model_Trait_Queue;
 
     /**
      * Initial configuration.
@@ -145,12 +143,16 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _execute()
     {
-        $config = $this->getWorkerConfig();
-        $model  = $config->getWorkerModel();
+        $config         = $this->getWorkerConfig();
+        $model          = $config->getWorkerModel();
+        $payload        = $this->getPayload(true);
+        $childLabour    = $this->getChildLabour();
 
         $model
             ->setLabour($this)
             ->setConfig($config)
+            ->setPayload($payload)
+            ->setChildLabour($childLabour)
             ->execute();
 
         return $this;
@@ -182,9 +184,7 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction = Mage::getModel('core/resource_transaction');
 
         if ($config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection()
-                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
-                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+            $queueCollection = $this->getBatchCollection();
 
             $this->setChildLabour($queueCollection);
 
@@ -222,9 +222,7 @@ class Pulchritudinous_Queue_Model_Labour
         ];
 
         if ($config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection()
-                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
-                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+            $queueCollection = $this->getBatchCollection();
 
             $this->setChildLabour($queueCollection);
 
@@ -284,12 +282,11 @@ class Pulchritudinous_Queue_Model_Labour
         $data           = [
             'status'        => self::STATUS_RUNNING,
             'started_at'    => now(),
+            'pid'           => $this->getPid(),
         ];
 
         if ($config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection()
-                ->addFieldToFilter('identity', ['eq' => $this->getIdentity()])
-                ->addFieldToFilter('worker', ['eq' => $this->getWorker()]);
+            $queueCollection = $this->getBatchCollection();
 
             $this->setChildLabour($queueCollection);
 
@@ -352,14 +349,20 @@ class Pulchritudinous_Queue_Model_Labour
     /**
      * Get payload.
      *
-     * @return array
+     * @param  boolean $asObject
+     *
+     * @return array|Varien_Object
      */
-    public function getPayload()
+    public function getPayload($asObject = false)
     {
         $data = $this->getData('payload');
 
         if (is_string($data)) {
             $data = unserialize($data);
+        }
+
+        if ($asObject == true) {
+            $data = new Varien_Object($data);
         }
 
         return $data;

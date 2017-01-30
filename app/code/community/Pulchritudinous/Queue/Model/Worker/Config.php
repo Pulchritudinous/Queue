@@ -91,7 +91,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
     public function loadWorkerClass($config)
     {
         $class  = $config->getClass();
-        $object = Mage::getSingleton($class);
+        $object = Mage::getModel($class);
 
         if (!$object || !($object instanceof Pulchritudinous_Queue_Model_Worker_Interface)) {
             return false;

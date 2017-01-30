@@ -1,5 +1,5 @@
 <?php
-require_once 'abstract.php';
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . 'abstract.php';
 
 /**
  * Shell for handling queue and labour execution.
@@ -56,6 +56,8 @@ class Pulchritudinous_Queue_Shell
         $this->_factory     = new Mage_Core_Model_Factory();
         $this->_shellFile   = __FILE__;
 
+        set_error_handler([$this, '_errorHandler']);
+
         $this->_applyPhpVariables();
         $this->_construct();
         $this->_validate();
@@ -111,41 +113,47 @@ class Pulchritudinous_Queue_Shell
         self::$processes    = new Varien_Data_Collection();
         $processes          = self::$processes;
 
-        while (true) {
-            self::validateProcesses();
+        try {
+            while (true) {
+                self::validateProcesses();
 
-            $server->addRecurringLabours();
+                $server->addRecurringLabours();
 
-            if (!$server->canStartNext($processes->count())) {
+                if (!$server->canStartNext($processes->count())) {
+                    sleep($configData->getPoll());
+                    continue;
+                }
+
+                $labour = $queue->receive();
+
+                if ($labour === false) {
+                    sleep($configData->getPoll());
+                    continue;
+                }
+
+                $resource = $server->startChildProcess($labour);
+
+                $validateProcesses = @self::validateProcess($resource);
+
+                if ($validateProcesses) {
+                    $status = proc_get_status($resource);
+
+                    $labour->getResource()->updateField($labour, 'pid', $status['pid']);
+
+                    $processes->addItem(
+                        new Varien_Object([
+                            'id'        => $status['pid'],
+                            'resource'  => $resource,
+                            'labour'    => $labour,
+                            'started'   => time(),
+                        ])
+                    );
+                }
+
                 sleep($configData->getPoll());
-                continue;
             }
-
-            $labour = $queue->receive();
-
-            if ($labour === false) {
-                sleep($configData->getPoll());
-                continue;
-            }
-
-            $resource = $server->startChildProcess($labour);
-
-            if (self::validateProcess($resource)) {
-                $status = proc_get_status($resource);
-
-                $labour->getResource()->updateField($labour, 'pid', $status['pid']);
-
-                $processes->addItem(
-                    new Varien_Object([
-                        'id'        => $status['pid'],
-                        'resource'  => $resource,
-                        'labour'    => $labour,
-                    ])
-                );
-
-            }
-
-            sleep($configData->getPoll());
+        } catch (Exception $e) {
+            exit(0);
         }
 
         exit(0);
@@ -161,7 +169,7 @@ class Pulchritudinous_Queue_Shell
         $processes = self::$processes;
 
         foreach ($processes as $process) {
-            if (!self::validateProcess($process->getResource())) {
+            if (!self::validateProcess($process)) {
                 proc_close($process->getResource());
                 $processes->removeItemByKey($process->getId());
             }
@@ -171,15 +179,50 @@ class Pulchritudinous_Queue_Shell
     /**
      * Validate single labour processes.
      *
-     * @param  resource $resource
+     * @param  Varien_Object|resource $process
      *
      * @return boolean
      */
-    public static function validateProcess($resource)
+    public static function validateProcess($process)
     {
+        if ($process instanceof Varien_Object) {
+            $resource   = $process->getResource();
+            $labour     = $process->getLabour();
+            $config     = $labour->getWorkerConfig();
+            $timeout    = $config->getTimeout();
+
+            if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
+                $labour->setAsUnknown();
+
+                return false;
+            }
+        } else {
+            $resource = $process;
+        }
+
         $status = proc_get_status($resource);
 
         return $status['running'];
+    }
+
+    /**
+     * Handle any errors from load xml
+     *
+     * @param integer $errNo
+     * @param string  $errStr
+     * @param string  $errFile
+     * @param integer $errLine
+     */
+    protected function _errorHandler($errNo, $errStr, $errFile, $errLine)
+    {
+        switch ($errNo) {
+            case E_ERROR:
+            case E_PARSE:
+            case E_CORE_ERROR:
+            case E_COMPILE_ERROR:
+            case E_COMPILE_ERROR:
+                exit(0);
+        }
     }
 
     /**
@@ -198,10 +241,6 @@ class Pulchritudinous_Queue_Shell
 
         if ($processes) {
             while ($processes->count()) {
-                if ($processes->count() < $configData->getThreads()) {
-                    break;
-                }
-
                 self::validateProcesses();
                 usleep(500);
             }

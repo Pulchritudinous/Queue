@@ -107,14 +107,14 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Receive next job from the queue.
      *
-     * @return Varien_Object|false
+     * @return Pulchritudinous_Queue_Model_Labour|false
      */
     public function receive()
     {
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
+        $pageNr             = 0;
         $runningCollection  = $this->getRunning();
-        $queueCollection    = $this->_getQueueCollection();
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
@@ -122,18 +122,38 @@ class Pulchritudinous_Queue_Model_Queue
             $running[$identity] = $identity;
         }
 
-        foreach ($queueCollection as $labour) {
-            $config     = $configModel->getWorkerConfigByName($labour->getWorker());
-            $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
+        $queueCollection = $this->_getQueueCollection();
 
-            if ($config->getRule() == 'wait') {
-                if (isset($running[$identity])) {
+        $queueCollection->setPageSize(50);
+
+        $pages  = $queueCollection->getLastPageNumber();
+        $pageNr = 1;
+
+        do {
+            $queueCollection
+                ->setCurPage($pageNr)
+                ->load();
+
+            foreach ($queueCollection as $labour) {
+                $config     = $configModel->getWorkerConfigByName($labour->getWorker());
+                $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
+
+                if (!$config) {
                     continue;
                 }
+
+                if ($config->getRule() == 'wait') {
+                    if (isset($running[$identity])) {
+                        continue;
+                    }
+                }
+
+                return $this->_beforeReturn($labour, $config);
             }
 
-            return $this->_beforeReturn($labour, $config);
-        }
+            $pageNr++;
+            $queueCollection->clear();
+        } while ($pageNr <= $pages);
 
         return false;
     }
@@ -145,12 +165,19 @@ class Pulchritudinous_Queue_Model_Queue
      */
     protected function _getQueueCollection()
     {
-        return Mage::getModel('pulchqueue/labour')
+        $oldzone = @date_default_timezone_get();
+        date_default_timezone_set('UTC');
+
+        $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
             ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
             ->addFieldToFilter('execute_at', ['lteq' => now()])
             ->setOrder('priority', 'ASC')
             ->setOrder('created_at', 'ASC');
+
+        date_default_timezone_set($oldzone);
+
+        return $collection;
     }
 
     /**

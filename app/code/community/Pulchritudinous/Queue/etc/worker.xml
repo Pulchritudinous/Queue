@@ -93,6 +93,7 @@
             <delay>0</delay>
             <retries>0</retries>
             <reschedule>0</reschedule>
+            <timeout>60</timeout>
             <logfile>pulchqueue_worker.log</logfile>
         </worker_default>
     </pulchqueue>
