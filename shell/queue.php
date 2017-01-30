@@ -145,6 +145,7 @@ class Pulchritudinous_Queue_Shell
                             'id'        => $status['pid'],
                             'resource'  => $resource,
                             'labour'    => $labour,
+                            'started'   => time(),
                         ])
                     );
                 }
@@ -168,7 +169,7 @@ class Pulchritudinous_Queue_Shell
         $processes = self::$processes;
 
         foreach ($processes as $process) {
-            if (!self::validateProcess($process->getResource())) {
+            if (!self::validateProcess($process)) {
                 proc_close($process->getResource());
                 $processes->removeItemByKey($process->getId());
             }
@@ -178,12 +179,27 @@ class Pulchritudinous_Queue_Shell
     /**
      * Validate single labour processes.
      *
-     * @param  resource $resource
+     * @param  Varien_Object|resource $process
      *
      * @return boolean
      */
-    public static function validateProcess($resource)
+    public static function validateProcess($process)
     {
+        if ($process instanceof Varien_Object) {
+            $resource   = $process->getResource();
+            $labour     = $process->getLabour();
+            $config     = $labour->getWorkerConfig();
+            $timeout    = $config->getTimeout();
+
+            if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
+                $labour->setAsUnknown();
+
+                return false;
+            }
+        } else {
+            $resource = $process;
+        }
+
         $status = proc_get_status($resource);
 
         return $status['running'];
