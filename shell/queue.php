@@ -56,7 +56,7 @@ class Pulchritudinous_Queue_Shell
         $this->_factory     = new Mage_Core_Model_Factory();
         $this->_shellFile   = __FILE__;
 
-        set_error_handler([$this, '_errorHandler']);
+        set_error_handler([$this, 'errorHandler']);
 
         $this->_applyPhpVariables();
         $this->_construct();
@@ -213,7 +213,7 @@ class Pulchritudinous_Queue_Shell
      * @param string  $errFile
      * @param integer $errLine
      */
-    protected function _errorHandler($errNo, $errStr, $errFile, $errLine)
+    public function errorHandler($errNo, $errStr, $errFile, $errLine)
     {
         switch ($errNo) {
             case E_ERROR:
