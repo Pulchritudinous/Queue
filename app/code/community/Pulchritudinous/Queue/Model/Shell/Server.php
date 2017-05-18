@@ -171,7 +171,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
         $configModel        = Mage::getSingleton('pulchqueue/config');
         $configData         = $configModel->getQueueConfig();
         $recurringConfig    = $configModel->getRecurringConfig();
-        $last               = $this->_lastSchedule;
+        $last               = (int) $this->_lastSchedule;
         $itsTime            = ($last + $recurringConfig->getPlanAheadMin() * 60) <= time();
 
         if (!$itsTime) {
