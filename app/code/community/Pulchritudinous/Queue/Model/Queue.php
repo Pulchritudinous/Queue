@@ -97,6 +97,7 @@ class Pulchritudinous_Queue_Model_Queue
             ->setWorker($worker)
             ->addData($options->getData())
             ->setIdentity($identity)
+            ->setRetries(0)
             ->setPayload($this->_validateArrayData($payload))
             ->setStatus('pending')
             ->save();
