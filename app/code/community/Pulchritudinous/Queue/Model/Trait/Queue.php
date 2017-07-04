@@ -54,12 +54,12 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
             array_flip($allowed)
         );
 
-        $mergedOptions = array_merge(
-            $config->getData(),
-            $options
+        $mergedOptions = array_replace(
+            $options,
+            $config->getData()
         );
 
-        return new Varien_Object($options);
+        return new Varien_Object($mergedOptions);
     }
 
     /**
