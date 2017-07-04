@@ -32,7 +32,7 @@
 <config>
     <modules>
         <Pulchritudinous_Queue>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </Pulchritudinous_Queue>
     </modules>
     <global>

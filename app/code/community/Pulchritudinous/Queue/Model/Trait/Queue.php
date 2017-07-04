@@ -44,7 +44,7 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
         $allowed = [
             'identity',
             'priority',
-            'retries',
+            'attempts',
             'delay',
             'execute_at',
         ];
@@ -54,9 +54,14 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
             array_flip($allowed)
         );
 
+        $configOptions = array_intersect_key(
+            $config->getData(),
+            array_flip($allowed)
+        );
+
         $mergedOptions = array_replace(
             $options,
-            $config->getData()
+            $configOptions
         );
 
         return new Varien_Object($mergedOptions);
@@ -72,24 +77,18 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
      */
     protected function _getWhen(Varien_Object $config, $delay = false)
     {
-        $oldzone = @date_default_timezone_get();
-
-        date_default_timezone_set('UTC');
-
-        $time           = time();
-        $when           = date('Y-m-d H:i:s', $time + $config->getDelay());
+        $time   = time();
+        $when   = $time + $config->getDelay();
 
         if ($delay !== false) {
             if (is_numeric($delay)) {
-                $when = date('Y-m-d H:i:s', $time + $delay);
+                $when = $time + $delay;
             } elseif ($delay instanceof Zend_Date) {
-                $when = $delay->toString("yyyy-MM-dd HH:mm:ss");
+                $when = $delay->toString(Zend_Date::TIMESTAMP);
             } elseif (is_numeric($config->getDelay())) {
-                $when = date('Y-m-d H:i:s', $time + $config->getDelay());
+                $when = $time + $config->getDelay();
             }
         }
-
-        date_default_timezone_set($oldzone);
 
         return $when;
     }

@@ -46,8 +46,8 @@
                 <rule>wait</rule>
                 <!-- Add a minimum seconds of delay before the job may be executed -->
                 <delay>0</delay>
-                <!-- Number of retries on failure -->
-                <retries>0</retries>
+                <!-- Number of attempts after failure -->
+                <attempts>0</attempts>
                 <!-- Reschedule the job after an amount of seconds on failure -->
                 <reschedule>0</reschedule>
                 <!-- Logging destination. The default is pulchqueue.log -->

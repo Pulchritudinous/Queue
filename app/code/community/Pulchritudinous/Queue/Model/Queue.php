@@ -97,7 +97,7 @@ class Pulchritudinous_Queue_Model_Queue
             ->setWorker($worker)
             ->addData($options->getData())
             ->setIdentity($identity)
-            ->setRetries(0)
+            ->setAttempts(0)
             ->setPayload($this->_validateArrayData($payload))
             ->setStatus('pending')
             ->save();
@@ -166,17 +166,12 @@ class Pulchritudinous_Queue_Model_Queue
      */
     protected function _getQueueCollection()
     {
-        $oldzone = @date_default_timezone_get();
-        date_default_timezone_set('UTC');
-
         $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
             ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
-            ->addFieldToFilter('execute_at', ['lteq' => now()])
+            ->addFieldToFilter('execute_at', ['lteq' => time()])
             ->setOrder('priority', 'ASC')
             ->setOrder('created_at', 'ASC');
-
-        date_default_timezone_set($oldzone);
 
         return $collection;
     }
@@ -255,7 +250,7 @@ class Pulchritudinous_Queue_Model_Queue
     {
         $data = [
             'status'        => Pulchritudinous_Queue_Model_Labour::STATUS_FINISHED,
-            'finished_at'   => now(),
+            'finished_at'   => time(),
         ];
 
         $labour->addData($data)->save();
@@ -280,7 +275,7 @@ class Pulchritudinous_Queue_Model_Queue
 
         $labour
             ->setStatus(Pulchritudinous_Queue_Model_Labour::STATUS_PENDING)
-            ->setRetries((int) $labour->getRetries() + 1)
+            ->setAttempts((int) $labour->getAttempts() + 1)
             ->setExecuteAt($this->_getWhen($config, $delay))
             ->save();
 

@@ -171,11 +171,11 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
     protected function _prepareDataForSave(Mage_Core_Model_Abstract $object)
     {
         if (!$object->getId()) {
-            $object->setCreatedAt(now());
+            $object->setCreatedAt(time());
         }
 
         $object->unsetData('pid');
-        $object->setUpdatedAt(now());
+        $object->setUpdatedAt(time());
 
         return parent::_prepareDataForSave($object);
     }

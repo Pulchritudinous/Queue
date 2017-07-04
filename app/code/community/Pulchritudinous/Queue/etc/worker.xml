@@ -43,7 +43,7 @@
             <test_expected_reschedule_exception>
                 <type>test</type>
                 <priority>500</priority>
-                <retries>1</retries>
+                <attempts>1</attempts>
                 <reschedule>3</reschedule>
                 <class>pulchqueue/worker_labour_test_reschedule_exception</class>
             </test_expected_reschedule_exception>
@@ -91,7 +91,7 @@
             <priority>100</priority>
             <rule>wait</rule>
             <delay>0</delay>
-            <retries>0</retries>
+            <attempts>0</attempts>
             <reschedule>0</reschedule>
             <timeout>60</timeout>
             <logfile>pulchqueue_worker.log</logfile>

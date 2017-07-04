@@ -165,11 +165,11 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function reschedule()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfigByName($this->getWorker());
-        $currentRetries = ($this->getRetries()) ? $this->getRetries() : 0;
+        $configModel        = Mage::getSingleton('pulchqueue/worker_config');
+        $config             = $configModel->getWorkerConfigByName($this->getWorker());
+        $currentAttempts    = ($this->getAttempts()) ? $this->getAttempts() : 0;
 
-        if ($config->getRetries() < $currentRetries) {
+        if ($config->getAttempts() < $currentAttempts) {
             return $this->setAsFailed();
         }
 
@@ -178,7 +178,7 @@ class Pulchritudinous_Queue_Model_Labour
         $data = [
             'status'        => self::STATUS_PENDING,
             'execute_at'    => $when,
-            'retries'       => $currentRetries + 1,
+            'attempts'      => $currentAttempts + 1,
         ];
 
         $transaction = Mage::getModel('core/resource_transaction');
@@ -217,8 +217,8 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_FAILED,
-            'started_at'    => now(),
-            'finished_at'   => now(),
+            'started_at'    => time(),
+            'finished_at'   => time(),
         ];
 
         if ($config->getRule() == 'batch') {
@@ -253,7 +253,7 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_UNKNOWN,
-            'finished_at'   => now(),
+            'finished_at'   => time(),
         ];
 
         foreach ($this->getBatchCollection() as $bundle) {
@@ -281,7 +281,7 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_RUNNING,
-            'started_at'    => now(),
+            'started_at'    => time(),
             'pid'           => $this->getPid(),
         ];
 
@@ -318,7 +318,7 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_FINISHED,
-            'finished_at'   => now(),
+            'finished_at'   => time(),
         ];
 
         foreach ($this->getBatchCollection() as $bundle) {
