@@ -251,8 +251,7 @@ class Pulchritudinous_Queue_Model_Labour
     {
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
-            'status'        => self::STATUS_UNKNOWN,
-            'finished_at'   => time(),
+            'status' => self::STATUS_UNKNOWN,
         ];
 
         foreach ($this->getBatchCollection() as $bundle) {
