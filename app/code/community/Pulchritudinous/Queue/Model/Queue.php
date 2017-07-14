@@ -223,14 +223,20 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Get all running labours.
      *
+     * @param  boolean $includeUnknown
+     *
      * @return Varien_Data_Collection|Varien_Object
      */
-    public function getRunning()
+    public function getRunning($includeUnknown = false)
     {
         $statuses = [
             Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
             Pulchritudinous_Queue_Model_Labour::STATUS_RUNNING,
         ];
+
+        if (true == $includeUnknown) {
+            $statuses[] = Pulchritudinous_Queue_Model_Labour::STATUS_UNKNOWN;
+        }
 
         $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
