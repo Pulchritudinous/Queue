@@ -60,8 +60,8 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
         );
 
         $mergedOptions = array_replace(
-            $options,
-            $configOptions
+            $configOptions,
+            $options
         );
 
         return new Varien_Object($mergedOptions);
