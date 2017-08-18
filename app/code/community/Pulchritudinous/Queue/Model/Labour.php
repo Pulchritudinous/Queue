@@ -178,7 +178,6 @@ class Pulchritudinous_Queue_Model_Labour
         $data = [
             'status'        => self::STATUS_PENDING,
             'execute_at'    => $when,
-            'attempts'      => $currentAttempts + 1,
         ];
 
         $transaction = Mage::getModel('core/resource_transaction');
@@ -276,13 +275,16 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _beforeExecute()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfigByName($this->getWorker());
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $configModel        = Mage::getSingleton('pulchqueue/worker_config');
+        $config             = $configModel->getWorkerConfigByName($this->getWorker());
+        $currentAttempts    = ($this->getAttempts()) ? $this->getAttempts() : 0;
+        $transaction        = Mage::getModel('core/resource_transaction');
+
+        $data               = [
             'status'        => self::STATUS_RUNNING,
             'started_at'    => time(),
             'pid'           => $this->getPid(),
+            'attempts'      => $currentAttempts + 1,
         ];
 
         if ($config->getRule() == 'batch') {
