@@ -280,8 +280,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
             $shouldAdd = $scheduler->trySchedule($time);
 
             if ($shouldAdd) {
-                $date       = new Zend_Date($time, Zend_Date::TIMESTAMP);
-                $runTimes[] = $date;
+                $runTimes[] = $time;
             }
         }
 
