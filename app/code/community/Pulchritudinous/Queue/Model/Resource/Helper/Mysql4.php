@@ -73,7 +73,7 @@ class Pulchritudinous_Queue_Model_Resource_Helper_Mysql4
     public function isLocked($name)
     {
         return (boolean) $this->getWriteAdapter()->query(
-            'IS_USED_LOCK(?);',
+            'SELECT IS_USED_LOCK(?);',
             [$name]
         )->fetchColumn();
     }
