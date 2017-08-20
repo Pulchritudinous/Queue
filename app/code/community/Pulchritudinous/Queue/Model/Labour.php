@@ -359,7 +359,7 @@ class Pulchritudinous_Queue_Model_Labour
         $data = $this->getData('payload');
 
         if (is_string($data)) {
-            $data = unserialize($data);
+            $data = json_decode($data);
         }
 
         if ($asObject == true) {
@@ -411,7 +411,7 @@ class Pulchritudinous_Queue_Model_Labour
     protected function _beforeSave()
     {
         if (is_array($this->getData('payload'))) {
-            $this->setPayload(serialize($this->getData('payload')));
+            $this->setPayload(json_encode($this->getData('payload')));
         }
 
         return parent::_beforeSave();
