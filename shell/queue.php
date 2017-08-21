@@ -169,7 +169,7 @@ class Pulchritudinous_Queue_Shell
     public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
     {
         $collection         = new Varien_Data_Collection();
-        $unknownCollection  = $queue->getRunning();
+        $unknownCollection  = $queue->getRunning(true);
 
         foreach ($unknownCollection as $labour) {
             $processes->addItem(
@@ -224,11 +224,7 @@ class Pulchritudinous_Queue_Shell
             $resource = $process;
         }
 
-        if ($resource) {
-            $status = proc_get_status($resource);
-        } else {
-            return (boolean) posix_getpgid($process->getId());
-        }
+        $status = proc_get_status($resource);
 
         return $status['running'];
     }
