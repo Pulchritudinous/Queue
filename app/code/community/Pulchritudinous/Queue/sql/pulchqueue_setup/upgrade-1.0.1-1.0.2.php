@@ -18,7 +18,7 @@ $adapter->dropForeignKey(
 $adapter->modifyColumn(
     $tableName,
     'id',
-    'BIGINT(20) UNSIGNED COMMENT "ID"'
+    'BIGINT(20) UNSIGNED auto_increment COMMENT "ID"'
 );
 
 $adapter->modifyColumn(
