@@ -146,7 +146,7 @@ class Pulchritudinous_Queue_Model_Worker_Config
             $recurring = $config->getRecurring();
 
             if (null !== $recClass && null !== $recMethod) {
-                $recurring['is_allowed'] = (boolean) Mage::helper($recClass)->$recMethod;
+                $recurring['is_allowed'] = (boolean) Mage::helper($recClass)->$recMethod($key);
             }
 
             if (true === is_array($recurring) && !isset($recurring['is_allowed'])) {
