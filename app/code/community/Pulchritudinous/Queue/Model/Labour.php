@@ -309,13 +309,24 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     * Mark labour as finished.
+     * After a successful execution.
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
     protected function _afterExecute()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $this->setAsFinished();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as finished.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function setAsFinished()
+    {
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_FINISHED,

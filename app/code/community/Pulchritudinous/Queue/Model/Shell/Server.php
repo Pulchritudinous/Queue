@@ -110,13 +110,6 @@ class Pulchritudinous_Queue_Model_Shell_Server
             Mage::throwException('Not allowed to start server.');
         }
 
-        $queue          = Mage::getModel('pulchqueue/queue');
-        $runningLabour  = $queue->getRunning();
-
-        foreach ($runningLabour as $labour) {
-            $labour->setAsUnknown();
-        }
-
         return $this;
     }
 

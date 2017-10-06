@@ -169,13 +169,14 @@ class Pulchritudinous_Queue_Shell
     public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
     {
         $collection         = new Varien_Data_Collection();
-        $unknownCollection  = $queue->getRunning(true);
+        $runingCollection   = $queue->getRunning(true);
 
-        foreach ($unknownCollection as $labour) {
+        foreach ($runingCollection as $labour) {
             $processes->addItem(
                 new Varien_Object([
                     'id'        => $labour->getPid(),
                     'started'   => $labour->getStartedAt(),
+                    'labour'    => $labour,
                 ])
             );
         }
@@ -214,11 +215,20 @@ class Pulchritudinous_Queue_Shell
             $labour     = $process->getLabour();
             $config     = $labour->getWorkerConfig();
             $timeout    = $config->getTimeout();
+            $pid        = $labour->getPid();
 
             if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
                 $labour->setAsUnknown();
 
                 return false;
+            }
+
+            if (null !== $pid
+                && !$process->getParentId()
+                && false === get_resource_type($resource)
+                && false === posix_kill($pid, 0)
+            ) {
+                $labour->setAsFinished();
             }
         } else {
             $resource = $process;
