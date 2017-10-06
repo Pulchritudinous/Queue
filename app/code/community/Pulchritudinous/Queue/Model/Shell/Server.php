@@ -185,6 +185,10 @@ class Pulchritudinous_Queue_Model_Shell_Server
         foreach ($workers as $worker) {
             $rec = new Varien_Object((array) $worker->getRecurring());
 
+            if (false === $rec->getIsAllowed()) {
+                continue;
+            }
+
             if (!($pattern = $rec->getPattern())) {
                 continue;
             }
