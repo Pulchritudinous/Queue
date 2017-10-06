@@ -52,7 +52,23 @@
                 <reschedule>0</reschedule>
                 <!-- Logging destination. The default is pulchqueue.log -->
                 <logfile>unique_worker_name.log</logfile>
+                <!-- Optional! Add this node jobs that should be run based on a defined schedule -->
+                <recurring>
+                    <!--
+                    Add a helper class to evaluate if the recurring job should run or not.
+                    If no class is defied it will be automagically be handled as runnable.
+                    -->
+                    <helper>pulchqueue/my_helper::myMethod</helper>
+                    <!-- Optional! The helper class can also be defined like this. -->
+                    <helper>
+                        <class>pulchqueue/my_helper</class>
+                        <method>myMethod</method>
+                    </helper>
+                    <!-- Define the cron schedule -->
+                    <pattern>*/1 * * * *</pattern>
+                </recurring>
             </unique_worker_name>
         </worker>
     </pulchqueue>
 </config>
+
