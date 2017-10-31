@@ -47,6 +47,7 @@ trait Pulchritudinous_Queue_Model_Trait_Queue
             'attempts',
             'delay',
             'execute_at',
+            'by_recurring',
         ];
 
         $options = array_intersect_key(

@@ -208,7 +208,8 @@ class Pulchritudinous_Queue_Model_Shell_Server
                     $options = [];
                 }
 
-                $options['delay'] = $date - time();
+                $options['by_recurring']    = 1;
+                $options['delay']           = $date - time();
 
                 try {
                     Mage::getModel('pulchqueue/queue')->add(
