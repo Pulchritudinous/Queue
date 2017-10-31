@@ -99,6 +99,8 @@ class Pulchritudinous_Queue_Model_Labour
     public function __construct()
     {
         $this->_init('pulchqueue/queue_labour');
+
+        set_error_handler([$this, 'errorHandler']);
     }
 
     /**
@@ -227,7 +229,7 @@ class Pulchritudinous_Queue_Model_Labour
             'finished_at'   => time(),
         ];
 
-        if ($config->getRule() == 'batch') {
+        if ($config instanceof Varien_Object && $config->getRule() == 'batch') {
             $queueCollection = $this->getBatchCollection();
 
             $this->setChildLabour($queueCollection);
@@ -473,6 +475,101 @@ class Pulchritudinous_Queue_Model_Labour
         }
 
         return $this;
+    }
+
+    /**
+     * Handle any errors.
+     *
+     * @param integer $errNo
+     * @param string  $errStr
+     * @param string  $errFile
+     * @param integer $errLine
+     */
+    public function errorHandler($errNo, $errStr, $errFile, $errLine)
+    {
+        $errno = $errNo & error_reporting();
+
+        if ($errno == 0) {
+            return false;
+        }
+
+        if (!defined('E_STRICT')) {
+            define('E_STRICT', 2048);
+        }
+
+        if (!defined('E_RECOVERABLE_ERROR')) {
+            define('E_RECOVERABLE_ERROR', 4096);
+        }
+
+        if (!defined('E_DEPRECATED')) {
+            define('E_DEPRECATED', 8192);
+        }
+
+        // PEAR specific message handling
+        if (stripos($errFile . $errStr, 'pear') !== false) {
+             // ignore strict and deprecated notices
+            if (($errno == E_STRICT) || ($errno == E_DEPRECATED)) {
+                return true;
+            }
+            // ignore attempts to read system files when open_basedir is set
+            if ($errno == E_WARNING && stripos($errStr, 'open_basedir') !== false) {
+                return true;
+            }
+        }
+
+        $errorMessage = '';
+
+        switch($errno){
+            case E_ERROR:
+                $errorMessage .= "Error";
+                break;
+            case E_WARNING:
+                $errorMessage .= "Warning";
+                break;
+            case E_PARSE:
+                $errorMessage .= "Parse Error";
+                break;
+            case E_NOTICE:
+                $errorMessage .= "Notice";
+                break;
+            case E_CORE_ERROR:
+                $errorMessage .= "Core Error";
+                break;
+            case E_CORE_WARNING:
+                $errorMessage .= "Core Warning";
+                break;
+            case E_COMPILE_ERROR:
+                $errorMessage .= "Compile Error";
+                break;
+            case E_COMPILE_WARNING:
+                $errorMessage .= "Compile Warning";
+                break;
+            case E_USER_ERROR:
+                $errorMessage .= "User Error";
+                break;
+            case E_USER_WARNING:
+                $errorMessage .= "User Warning";
+                break;
+            case E_USER_NOTICE:
+                $errorMessage .= "User Notice";
+                break;
+            case E_STRICT:
+                $errorMessage .= "Strict Notice";
+                break;
+            case E_RECOVERABLE_ERROR:
+                $errorMessage .= "Recoverable Error";
+                break;
+            case E_DEPRECATED:
+                $errorMessage .= "Deprecated functionality";
+                break;
+            default:
+                $errorMessage .= "Unknown error ($errno)";
+                break;
+        }
+
+        $errorMessage .= ": {$errStr}  in {$errFile} on line {$errLine}";
+
+        Mage::log($errorMessage, Zend_Log::ERR);
     }
 }
 
