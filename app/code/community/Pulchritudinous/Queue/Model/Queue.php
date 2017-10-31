@@ -234,7 +234,7 @@ class Pulchritudinous_Queue_Model_Queue
             Pulchritudinous_Queue_Model_Labour::STATUS_RUNNING,
         ];
 
-        if (true == $includeUnknown) {
+        if (true === $includeUnknown) {
             $statuses[] = Pulchritudinous_Queue_Model_Labour::STATUS_UNKNOWN;
         }
 
