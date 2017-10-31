@@ -75,6 +75,13 @@ class Pulchritudinous_Queue_Model_Labour
     const STATUS_FINISHED       = 'finished';
 
     /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_SKIPPED        = 'skipped';
+
+    /**
      * Worker configuration.
      *
      * @return false|Varien_Object
@@ -252,6 +259,31 @@ class Pulchritudinous_Queue_Model_Labour
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status' => self::STATUS_UNKNOWN,
+        ];
+
+        foreach ($this->getBatchCollection() as $bundle) {
+            $bundle->addData($data);
+            $transaction->addObject($bundle);
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as skipped.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function setAsSkipped()
+    {
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status' => self::STATUS_SKIPPED,
         ];
 
         foreach ($this->getBatchCollection() as $bundle) {

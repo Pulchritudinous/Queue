@@ -287,5 +287,25 @@ class Pulchritudinous_Queue_Model_Queue
 
         return true;
     }
+
+    /**
+     * Clear missed recurring labours.
+     *
+     * @return Pulchritudinous_Queue_Model_Queue
+     */
+    public function clearMissingRecurring()
+    {
+        $collection = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
+            ->addFieldToFilter('by_recurring', ['eq' => 1])
+            ->addFieldToFilter('execute_at', ['lt' => time()]);
+
+        foreach ($collection as $labour) {
+            $labour->setAsSkipped();
+        }
+
+        return $collection;
+    }
 }
 
