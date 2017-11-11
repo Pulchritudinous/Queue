@@ -168,9 +168,11 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      * ]
      * @see Pulchritudinous_Queue_Model_Queue::add()
      *
+     * @param  array $worderConfig
+     *
      * @return array
      */
-    public function getRecurringOptions()
+    public static function getRecurringOptions($worderConfig = [])
     {
         return [];
     }

@@ -200,9 +200,10 @@ class Pulchritudinous_Queue_Model_Shell_Server
             }
 
             foreach ($runTimes as $date) {
-                $opt        = new Varien_Object($worker->getWorkerModel()->getRecurringOptions());
-                $options    = $opt->getOptions();
-                ($payload   = $opt->getPayload()) || ($payload = []);
+                $workerModel    = $worker->getWorkerModel();
+                $opt            = new Varien_Object($workerModel::getRecurringOptions($worker->getData()));
+                $options        = $opt->getOptions();
+                ($payload       = $opt->getPayload()) || ($payload = []);
 
                 if (!$options) {
                     $options = [];
