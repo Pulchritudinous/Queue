@@ -41,6 +41,7 @@
                 run     - Run simultaneously in a unique process as other workers with the same name.
                 wait    - Waits on previous worker with the same name to be finished before running.
                 replace - Replaces any existing non-running scheduled worker with the same worker name.
+                ignore  - Check if a worker exists with the same identifier before adding.
                 batch   - Will collect other jobs with the same worker name to be run in a single worker.
                 -->
                 <rule>wait</rule>
