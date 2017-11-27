@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -119,6 +119,9 @@ class Pulchritudinous_Queue_Model_Worker_Config
         $resources = $resources->asArray();
 
         foreach ($resources as $key => $resource) {
+            $recClass   = null;
+            $recMethod  = null;
+
             $config = new Varien_Object(
                 $resource
             );
@@ -130,6 +133,27 @@ class Pulchritudinous_Queue_Model_Worker_Config
             if (strtolower($config->getType()) == 'test' && !Mage::getIsDeveloperMode()) {
                 continue;
             }
+
+            if ($recHelper = $config->getData('recurring/helper')) {
+                if (is_array($recHelper)) {
+                    $recClass   = $config->getData('recurring/helper/class');
+                    $recMethod  = $config->getData('recurring/helper/method');
+                } elseif (is_string($recHelper) && false !== strpos($recHelper, '::')) {
+                    list($recClass, $recMethod) = explode('::', $recHelper);
+                }
+            }
+
+            $recurring = $config->getRecurring();
+
+            if (null !== $recClass && null !== $recMethod) {
+                $recurring['is_allowed'] = (boolean) Mage::helper($recClass)->$recMethod($key);
+            }
+
+            if (true === is_array($recurring) && !isset($recurring['is_allowed'])) {
+                $recurring['is_allowed'] = true;
+            }
+
+            $config->setRecurring($recurring);
 
             $config->setRule(strtolower($config->getRule()));
             $config->setWorkerName($key);

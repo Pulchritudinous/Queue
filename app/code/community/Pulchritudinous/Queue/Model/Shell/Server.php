@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -110,13 +110,6 @@ class Pulchritudinous_Queue_Model_Shell_Server
             Mage::throwException('Not allowed to start server.');
         }
 
-        $queue          = Mage::getModel('pulchqueue/queue');
-        $runningLabour  = $queue->getRunning();
-
-        foreach ($runningLabour as $labour) {
-            $labour->setAsUnknown();
-        }
-
         return $this;
     }
 
@@ -185,6 +178,10 @@ class Pulchritudinous_Queue_Model_Shell_Server
         foreach ($workers as $worker) {
             $rec = new Varien_Object((array) $worker->getRecurring());
 
+            if (false === $rec->getIsAllowed()) {
+                continue;
+            }
+
             if (!($pattern = $rec->getPattern())) {
                 continue;
             }
@@ -203,15 +200,17 @@ class Pulchritudinous_Queue_Model_Shell_Server
             }
 
             foreach ($runTimes as $date) {
-                $opt        = new Varien_Object($worker->getWorkerModel()->getRecurringOptions());
-                $options    = $opt->getOptions();
-                ($payload   = $opt->getPayload()) || ($payload = []);
+                $workerModel    = $worker->getWorkerModel();
+                $opt            = new Varien_Object($workerModel::getRecurringOptions($worker->getData()));
+                $options        = $opt->getOptions();
+                ($payload       = $opt->getPayload()) || ($payload = []);
 
                 if (!$options) {
                     $options = [];
                 }
 
-                $options['delay'] = $date - time();
+                $options['by_recurring']    = 1;
+                $options['delay']           = $date - time();
 
                 try {
                     Mage::getModel('pulchqueue/queue')->add(

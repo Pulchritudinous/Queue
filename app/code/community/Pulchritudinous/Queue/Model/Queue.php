@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -223,14 +223,20 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Get all running labours.
      *
+     * @param  boolean $includeUnknown
+     *
      * @return Varien_Data_Collection|Varien_Object
      */
-    public function getRunning()
+    public function getRunning($includeUnknown = false)
     {
         $statuses = [
             Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
             Pulchritudinous_Queue_Model_Labour::STATUS_RUNNING,
         ];
+
+        if (true === $includeUnknown) {
+            $statuses[] = Pulchritudinous_Queue_Model_Labour::STATUS_UNKNOWN;
+        }
 
         $collection = Mage::getModel('pulchqueue/labour')
             ->getCollection()
@@ -280,6 +286,26 @@ class Pulchritudinous_Queue_Model_Queue
             ->save();
 
         return true;
+    }
+
+    /**
+     * Clear missed recurring labours.
+     *
+     * @return Pulchritudinous_Queue_Model_Queue
+     */
+    public function clearMissingRecurring()
+    {
+        $collection = Mage::getModel('pulchqueue/labour')
+            ->getCollection()
+            ->addFieldToFilter('status', ['eq' => Pulchritudinous_Queue_Model_Labour::STATUS_PENDING])
+            ->addFieldToFilter('by_recurring', ['eq' => 1])
+            ->addFieldToFilter('execute_at', ['lt' => time()]);
+
+        foreach ($collection as $labour) {
+            $labour->setAsSkipped();
+        }
+
+        return $collection;
     }
 }
 

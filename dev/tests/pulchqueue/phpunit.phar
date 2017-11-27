@@ -16627,7 +16627,7 @@ interface PHPUnit_Framework_MockObject_Verifiable
 }
 code-unit-reverse-lookup
 
-Copyright (c) 2016, Sebastian Bergmann <sebastian@phpunit.de>.
+Copyright (c) 2017, Sebastian Bergmann <sebastian@phpunit.de>.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -21347,7 +21347,7 @@ class Snapshot
 }
 Object Enumerator
 
-Copyright (c) 2016, Sebastian Bergmann <sebastian@phpunit.de>.
+Copyright (c) 2017, Sebastian Bergmann <sebastian@phpunit.de>.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -22135,7 +22135,7 @@ interface InstantiatorInterface
      */
     public function instantiate($className);
 }
-Copyright (c) 2004-2016 Fabien Potencier
+Copyright (c) 2004-2017 Fabien Potencier
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

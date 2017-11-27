@@ -3,7 +3,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@
                 run     - Run simultaneously in a unique process as other workers with the same name.
                 wait    - Waits on previous worker with the same name to be finished before running.
                 replace - Replaces any existing non-running scheduled worker with the same worker name.
+                ignore  - Check if a worker exists with the same identifier before adding.
                 batch   - Will collect other jobs with the same worker name to be run in a single worker.
                 -->
                 <rule>wait</rule>
@@ -52,7 +53,23 @@
                 <reschedule>0</reschedule>
                 <!-- Logging destination. The default is pulchqueue.log -->
                 <logfile>unique_worker_name.log</logfile>
+                <!-- Optional! Add this node jobs that should be run based on a defined schedule -->
+                <recurring>
+                    <!--
+                    Add a helper class to evaluate if the recurring job should run or not.
+                    If no class is defied it will be automagically be handled as runnable.
+                    -->
+                    <helper>pulchqueue/my_helper::myMethod</helper>
+                    <!-- Optional! The helper class can also be defined like this. -->
+                    <helper>
+                        <class>pulchqueue/my_helper</class>
+                        <method>myMethod</method>
+                    </helper>
+                    <!-- Define the cron schedule -->
+                    <pattern>*/1 * * * *</pattern>
+                </recurring>
             </unique_worker_name>
         </worker>
     </pulchqueue>
 </config>
+

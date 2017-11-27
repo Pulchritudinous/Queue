@@ -25,20 +25,59 @@
 ?>
 <?php
 /**
- *
+ * Queue helper.
  *
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
-class Pulchritudinous_Queue_Model_Worker_Labour_Test_Success
-    extends Pulchritudinous_Queue_Model_Worker_Abstract
+class Pulchritudinous_Queue_Helper_Data
+    extends Mage_Core_Helper_Abstract
 {
     /**
+     * Convert nested mixed data array into array data.
      *
+     * @param  array $data
      *
-     * @throws Mage_Core_Exception
+     * @return array
      */
-    public function execute()
+    public function objectToArray($data)
     {
+        $result = [];
+
+        foreach ($data as $key => $value) {
+            if (is_object($value) && $this->isSerializable($value)) {
+                if ($value instanceof Varien_Object) {
+                    $value = $value->getData();
+                } else {
+                    $value = (array) $value;
+                }
+            }
+
+            if (is_array($value)) {
+                $result[$key] = $this->objectToArray($value);
+            } else {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Check if value is serializable.
+     *
+     * @param  mixed $var
+     *
+     * @return boolean
+     */
+    function isSerializable($var)
+    {
+        if (is_resource($var)) {
+            return false;
+        } else if ($var instanceof Closure) {
+            return false;
+        }
+
+        return true;
     }
 }
 

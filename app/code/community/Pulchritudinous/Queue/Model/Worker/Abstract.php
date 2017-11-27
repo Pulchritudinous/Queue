@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -168,9 +168,11 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      * ]
      * @see Pulchritudinous_Queue_Model_Queue::add()
      *
+     * @param  array $worderConfig
+     *
      * @return array
      */
-    public function getRecurringOptions()
+    public static function getRecurringOptions($worderConfig = [])
     {
         return [];
     }

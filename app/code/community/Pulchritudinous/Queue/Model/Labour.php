@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2016 Pulchritudinous
+ * Copyright (c) 2017 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -75,6 +75,13 @@ class Pulchritudinous_Queue_Model_Labour
     const STATUS_FINISHED       = 'finished';
 
     /**
+     * Labour status.
+     *
+     * @var string
+     */
+    const STATUS_SKIPPED        = 'skipped';
+
+    /**
      * Worker configuration.
      *
      * @return false|Varien_Object
@@ -92,6 +99,8 @@ class Pulchritudinous_Queue_Model_Labour
     public function __construct()
     {
         $this->_init('pulchqueue/queue_labour');
+
+        set_error_handler([$this, 'errorHandler']);
     }
 
     /**
@@ -220,7 +229,7 @@ class Pulchritudinous_Queue_Model_Labour
             'finished_at'   => time(),
         ];
 
-        if ($config->getRule() == 'batch') {
+        if ($config instanceof Varien_Object && $config->getRule() == 'batch') {
             $queueCollection = $this->getBatchCollection();
 
             $this->setChildLabour($queueCollection);
@@ -251,8 +260,32 @@ class Pulchritudinous_Queue_Model_Labour
     {
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
-            'status'        => self::STATUS_UNKNOWN,
-            'finished_at'   => time(),
+            'status' => self::STATUS_UNKNOWN,
+        ];
+
+        foreach ($this->getBatchCollection() as $bundle) {
+            $bundle->addData($data);
+            $transaction->addObject($bundle);
+        }
+
+        $this->addData($data);
+
+        $transaction->addObject($this);
+        $transaction->save();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as skipped.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function setAsSkipped()
+    {
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = [
+            'status' => self::STATUS_SKIPPED,
         ];
 
         foreach ($this->getBatchCollection() as $bundle) {
@@ -310,13 +343,24 @@ class Pulchritudinous_Queue_Model_Labour
     }
 
     /**
-     * Mark labour as finished.
+     * After a successful execution.
      *
      * @return Pulchritudinous_Queue_Model_Labour
      */
     protected function _afterExecute()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $this->setAsFinished();
+
+        return $this;
+    }
+
+    /**
+     * Mark labour as finished.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    public function setAsFinished()
+    {
         $transaction    = Mage::getModel('core/resource_transaction');
         $data           = [
             'status'        => self::STATUS_FINISHED,
@@ -360,7 +404,7 @@ class Pulchritudinous_Queue_Model_Labour
         $data = $this->getData('payload');
 
         if (is_string($data)) {
-            $data = unserialize($data);
+            $data = json_decode($data);
         }
 
         if ($asObject == true) {
@@ -412,7 +456,7 @@ class Pulchritudinous_Queue_Model_Labour
     protected function _beforeSave()
     {
         if (is_array($this->getData('payload'))) {
-            $this->setPayload(serialize($this->getData('payload')));
+            $this->setPayload(json_encode($this->getData('payload')));
         }
 
         return parent::_beforeSave();
@@ -431,6 +475,101 @@ class Pulchritudinous_Queue_Model_Labour
         }
 
         return $this;
+    }
+
+    /**
+     * Handle any errors.
+     *
+     * @param integer $errNo
+     * @param string  $errStr
+     * @param string  $errFile
+     * @param integer $errLine
+     */
+    public function errorHandler($errNo, $errStr, $errFile, $errLine)
+    {
+        $errno = $errNo & error_reporting();
+
+        if ($errno == 0) {
+            return false;
+        }
+
+        if (!defined('E_STRICT')) {
+            define('E_STRICT', 2048);
+        }
+
+        if (!defined('E_RECOVERABLE_ERROR')) {
+            define('E_RECOVERABLE_ERROR', 4096);
+        }
+
+        if (!defined('E_DEPRECATED')) {
+            define('E_DEPRECATED', 8192);
+        }
+
+        // PEAR specific message handling
+        if (stripos($errFile . $errStr, 'pear') !== false) {
+             // ignore strict and deprecated notices
+            if (($errno == E_STRICT) || ($errno == E_DEPRECATED)) {
+                return true;
+            }
+            // ignore attempts to read system files when open_basedir is set
+            if ($errno == E_WARNING && stripos($errStr, 'open_basedir') !== false) {
+                return true;
+            }
+        }
+
+        $errorMessage = '';
+
+        switch($errno){
+            case E_ERROR:
+                $errorMessage .= "Error";
+                break;
+            case E_WARNING:
+                $errorMessage .= "Warning";
+                break;
+            case E_PARSE:
+                $errorMessage .= "Parse Error";
+                break;
+            case E_NOTICE:
+                $errorMessage .= "Notice";
+                break;
+            case E_CORE_ERROR:
+                $errorMessage .= "Core Error";
+                break;
+            case E_CORE_WARNING:
+                $errorMessage .= "Core Warning";
+                break;
+            case E_COMPILE_ERROR:
+                $errorMessage .= "Compile Error";
+                break;
+            case E_COMPILE_WARNING:
+                $errorMessage .= "Compile Warning";
+                break;
+            case E_USER_ERROR:
+                $errorMessage .= "User Error";
+                break;
+            case E_USER_WARNING:
+                $errorMessage .= "User Warning";
+                break;
+            case E_USER_NOTICE:
+                $errorMessage .= "User Notice";
+                break;
+            case E_STRICT:
+                $errorMessage .= "Strict Notice";
+                break;
+            case E_RECOVERABLE_ERROR:
+                $errorMessage .= "Recoverable Error";
+                break;
+            case E_DEPRECATED:
+                $errorMessage .= "Deprecated functionality";
+                break;
+            default:
+                $errorMessage .= "Unknown error ($errno)";
+                break;
+        }
+
+        $errorMessage .= ": {$errStr}  in {$errFile} on line {$errLine}";
+
+        Mage::log($errorMessage, Zend_Log::ERR);
     }
 }
 

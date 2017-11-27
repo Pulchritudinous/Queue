@@ -110,7 +110,7 @@ class Pulchritudinous_Queue_Shell
 
         self::$configData   = $configData;
         self::$server       = $server;
-        self::$processes    = new Varien_Data_Collection();
+        self::$processes    = self::initProcessCollection($queue);
         $processes          = self::$processes;
 
         try {
@@ -160,6 +160,33 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
+     * Init process collection.
+     *
+     * @param  Pulchritudinous_Queue_Model_Queue $queue
+     *
+     * @return Varien_Data_Collection
+     */
+    public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
+    {
+        $queue->removeMissingRecurring();
+
+        $collection         = new Varien_Data_Collection();
+        $runingCollection   = $queue->getRunning(true);
+
+        foreach ($runingCollection as $labour) {
+            $processes->addItem(
+                new Varien_Object([
+                    'id'        => $labour->getPid(),
+                    'started'   => $labour->getStartedAt(),
+                    'labour'    => $labour,
+                ])
+            );
+        }
+
+        return $collection;
+    }
+
+    /**
      * Validate all labour processes.
      *
      * @return Pulchritudinous_Queue_Shell
@@ -190,11 +217,20 @@ class Pulchritudinous_Queue_Shell
             $labour     = $process->getLabour();
             $config     = $labour->getWorkerConfig();
             $timeout    = $config->getTimeout();
+            $pid        = $labour->getPid();
 
             if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
                 $labour->setAsUnknown();
 
                 return false;
+            }
+
+            if (null !== $pid
+                && !$process->getParentId()
+                && false === get_resource_type($resource)
+                && false === posix_kill($pid, 0)
+            ) {
+                $labour->setAsFinished();
             }
         } else {
             $resource = $process;
