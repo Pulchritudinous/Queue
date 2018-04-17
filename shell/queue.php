@@ -197,7 +197,7 @@ class Pulchritudinous_Queue_Shell
         $runingCollection   = $queue->getRunning(true);
 
         foreach ($runingCollection as $labour) {
-            $processes->addItem(
+            $collection->addItem(
                 new Varien_Object([
                     'id'        => $labour->getPid(),
                     'started'   => $labour->getStartedAt(),
