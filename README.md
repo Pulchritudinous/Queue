@@ -13,24 +13,24 @@ Pulchritudinous Queue is licensed under the MIT License - see the [LICENSE](LICE
 
 ## Features
 * No dependency on ordinary Magento cron job.
-* Prevents parallell queue execution.
+* Prevents parallel queue execution.
 * Support simultaneous worker execution (default 2).
 * Supports multiple methods of execution.
     - Run any worker of the same type simultaneously.
-    - Waits for any running worker of the same type to finsh.
+    - Waits for any running worker of the same type to finish.
     - Batches workers of the same type to be run simultaneously.
 * Worker error management and rescheduling.
 * Recurring worker execution.
 
 ## Server Configuration
 
-The queue.php shell file is running non-daemon mode and is ment to be running as a service with help of a processes controller like [Supervisor](http://supervisord.org/).
+The queue.php shell file is running non-daemon mode and is supposed to be running as a service with help of a processes controller like [Supervisor](http://supervisord.org/).
 
 ## Usage
 
 ### Create a new worker
 
-You can read more about different configurations in the `worker.xml.sample` file inside this modiles `etc` folder.
+You can read more about different configurations in the `worker.xml.sample` file inside this modules `etc` folder.
 
 Create a `worker.xml` file inside a modules `etc` folder
 ```xml
@@ -70,8 +70,8 @@ To schedule a worker you only need to do this.
 $order = Mage::getModel('sales/order')->load(1);
 
 Mage::getSingleton('pulchqueue/queue')->add(
-    'my_unqiue_worker_name', 
-    $order->getData(), 
+    'my_unqiue_worker_name',
+    $order->getData(),
     ['identity' => $order->getId(), 'deplay' => 100]
 )
 ```
