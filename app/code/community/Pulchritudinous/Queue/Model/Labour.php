@@ -404,7 +404,7 @@ class Pulchritudinous_Queue_Model_Labour
         $data = $this->getData('payload');
 
         if (is_string($data)) {
-            $data = json_decode($data);
+            $data = json_decode($data, true);
         }
 
         if ($asObject == true) {
