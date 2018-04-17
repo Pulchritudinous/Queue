@@ -193,8 +193,6 @@ class Pulchritudinous_Queue_Shell
      */
     public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
     {
-        $queue->removeMissingRecurring();
-
         $collection         = new Varien_Data_Collection();
         $runingCollection   = $queue->getRunning(true);
 
