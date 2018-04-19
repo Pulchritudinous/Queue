@@ -134,6 +134,16 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
     }
 
     /**
+     * Get payload object.
+     *
+     * @return Varien_Object
+     */
+    public function getPayload()
+    {
+        return $this->_getPayload();
+    }
+
+    /**
      * Set child labour collection.
      *
      * @param  Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $children
