@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -175,7 +175,9 @@ class Pulchritudinous_Queue_Shell
                     );
                 }
 
-                sleep($configData->getPoll());
+                if (!$server->canStartNext($processes->count())) {
+                    sleep($configData->getPoll());
+                }
             }
         } catch (Exception $e) {
             exit(0);
@@ -220,7 +222,10 @@ class Pulchritudinous_Queue_Shell
 
         foreach ($processes as $process) {
             if (!self::validateProcess($process)) {
-                proc_close($process->getResource());
+                if (is_resource($process->getResource())) {
+                    proc_close($process->getResource());
+                }
+
                 $processes->removeItemByKey($process->getId());
             }
         }
@@ -242,6 +247,12 @@ class Pulchritudinous_Queue_Shell
             $timeout    = $config->getTimeout();
             $pid        = $labour->getPid();
 
+            if (null === $resource) {
+                $labour->setAsUnknown();
+
+                return false;
+            }
+
             if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
                 $labour->setAsUnknown();
 
@@ -261,7 +272,7 @@ class Pulchritudinous_Queue_Shell
 
         $status = proc_get_status($resource);
 
-        return $status['running'];
+        return (bool) @$status['running'];
     }
 
     /**

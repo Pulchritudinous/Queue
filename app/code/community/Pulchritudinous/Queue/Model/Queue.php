@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,10 @@ class Pulchritudinous_Queue_Model_Queue
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfigByName($worker);
         $labourModel    = Mage::getModel('pulchqueue/labour');
+
+        if (!$worker) {
+            return $this;
+        }
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
@@ -116,11 +120,18 @@ class Pulchritudinous_Queue_Model_Queue
         $running            = [];
         $pageNr             = 0;
         $runningCollection  = $this->getRunning();
+        $runningWorkerCount = [];
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             $running[$identity] = $identity;
+
+            if (!isset($runningWorkerCount[$labour->getWorker()])) {
+                $runningWorkerCount[$labour->getWorker()] = 0;
+            }
+
+            $runningWorkerCount[$labour->getWorker()]++;
         }
 
         $queueCollection = $this->_getQueueCollection();
@@ -136,8 +147,11 @@ class Pulchritudinous_Queue_Model_Queue
                 ->load();
 
             foreach ($queueCollection as $labour) {
-                $config     = $configModel->getWorkerConfigByName($labour->getWorker());
-                $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
+                $config         = $configModel->getWorkerConfigByName($labour->getWorker());
+                $identity       = "{$labour->getWorker()}-{$labour->getIdentity()}";
+                $currentRunning = isset($runningWorkerCount[$labour->getWorker()])
+                    ? $runningWorkerCount[$labour->getWorker()]
+                    : 0;
 
                 if (!$config) {
                     continue;
@@ -147,6 +161,10 @@ class Pulchritudinous_Queue_Model_Queue
                     if (isset($running[$identity])) {
                         continue;
                     }
+                }
+
+                if ($config->getLimit() && $config->getLimit() <= $currentRunning) {
+                    continue;
                 }
 
                 return $this->_beforeReturn($labour, $config);
@@ -187,8 +205,10 @@ class Pulchritudinous_Queue_Model_Queue
     protected function _beforeReturn(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
     {
         $transaction    = Mage::getModel('core/resource_transaction');
+        $id             = uniqid('', true);
         $data           = [
-            'status' => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
+            'status'    => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
+            'batch'     => $id,
         ];
 
         if ($config->getRule() == 'batch') {
@@ -198,14 +218,7 @@ class Pulchritudinous_Queue_Model_Queue
 
             foreach ($queueCollection as $bundle) {
                 if ($bundle->getId() != $labour->getId()) {
-                    $bundle->addData(
-                        array_merge(
-                            $data,
-                            [
-                                'parent_id' => $labour->getId(),
-                            ]
-                        )
-                    );
+                    $bundle->addData($data);
 
                     $transaction->addObject($bundle);
                 }

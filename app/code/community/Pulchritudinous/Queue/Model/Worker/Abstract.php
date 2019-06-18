@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -53,13 +53,6 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      * @var Varien_Object
      */
     protected $_payload;
-
-    /**
-     * Child labour collection.
-     *
-     * @var Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
-     */
-    protected $_childLabour;
 
     /**
      * Set labour model to worker.
@@ -128,9 +121,9 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      *
      * @return Varien_Object
      */
-    protected function _getPayload()
+    public function getPayload()
     {
-        return $this->_payload;
+        return $this->_getPayload();
     }
 
     /**
@@ -138,33 +131,9 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
      *
      * @return Varien_Object
      */
-    public function getPayload()
+    protected function _getPayload()
     {
-        return $this->_getPayload();
-    }
-
-    /**
-     * Set child labour collection.
-     *
-     * @param  Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $children
-     *
-     * @return Pulchritudinous_Queue_Model_Worker_Abstract
-     */
-    public function setChildLabour(Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $children = null)
-    {
-        $this->_childLabour = $children;
-
-        return $this;
-    }
-
-    /**
-     * Get child labour collection.
-     *
-     * @return Pulchritudinous_Queue_Model_Worker_Abstract|null
-     */
-    protected function _getChildLabour()
-    {
-        return $this->_childLabour;
+        return $this->_payload;
     }
 
     /**
@@ -185,6 +154,30 @@ abstract class Pulchritudinous_Queue_Model_Worker_Abstract
     public static function getRecurringOptions($worderConfig = [])
     {
         return [];
+    }
+
+    /**
+     * Called before batch job is executed.
+     *
+     * @param  Pulchritudinous_Queue_Model_Labour_Batch $batch
+     *
+     * @return null
+     */
+    public static function beforeBatchExecute(Pulchritudinous_Queue_Model_Labour_Batch $batch)
+    {
+        return null;
+    }
+
+    /**
+     * Called after batch job is executed.
+     *
+     * @param  Pulchritudinous_Queue_Model_Labour_Batch $batch
+     *
+     * @return null
+     */
+    public static function afterBatchExecute(Pulchritudinous_Queue_Model_Labour_Batch $batch)
+    {
+        return null;
     }
 
     /**
