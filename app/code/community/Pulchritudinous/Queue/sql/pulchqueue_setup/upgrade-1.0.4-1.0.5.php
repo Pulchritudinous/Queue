@@ -9,8 +9,8 @@ $adapter->addColumn(
     'batch',
     [
         'type'      => Varien_Db_Ddl_Table::TYPE_TEXT,
-        'size'      => 255,
-        'nullable'  => false,
+        'length'    => 255,
+        'nullable'  => true,
         'after'     => 'parent_id',
         'comment'   => 'Batch ID'
     ]
