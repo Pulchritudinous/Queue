@@ -135,7 +135,7 @@ class Pulchritudinous_Queue_Shell
 
         self::$configData   = $configData;
         self::$server       = $server;
-        self::$processes    = self::initProcessCollection($queue);
+        self::$processes    = new Varien_Data_Collection();
         $processes          = self::$processes;
 
         try {
@@ -184,31 +184,6 @@ class Pulchritudinous_Queue_Shell
         }
 
         exit(0);
-    }
-
-    /**
-     * Init process collection.
-     *
-     * @param  Pulchritudinous_Queue_Model_Queue $queue
-     *
-     * @return Varien_Data_Collection
-     */
-    public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
-    {
-        $collection         = new Varien_Data_Collection();
-        $runingCollection   = $queue->getRunning(true);
-
-        foreach ($runingCollection as $labour) {
-            $collection->addItem(
-                new Varien_Object([
-                    'id'        => $labour->getPid(),
-                    'started'   => $labour->getStartedAt(),
-                    'labour'    => $labour,
-                ])
-            );
-        }
-
-        return $collection;
     }
 
     /**
