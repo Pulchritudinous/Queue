@@ -168,17 +168,22 @@ class Pulchritudinous_Queue_Model_Labour
                 ->getCollection()
                 ->addFieldToFilter('batch', ['eq' => $this->getId()]);
 
-            $batch = Mage::getModel('pulchqueue', [$labour->getBatch(), $config->getWorker(), $collection]);
+            $batch = Mage::getModel('pulchqueue', [
+                $labour->getBatch(),
+                $labour->getPid(),
+                $config->getWorker(),
+                $collection
+            ]);
 
             $batch->execute();
+        } else {
+            $model
+                ->setLabour($this)
+                ->setConfig($config)
+                ->setPayload($payload)
+                ->setChildLabour($childLabour)
+                ->execute();
         }
-
-        $model
-            ->setLabour($this)
-            ->setConfig($config)
-            ->setPayload($payload)
-            ->setChildLabour($childLabour)
-            ->execute();
 
         return $this;
     }
@@ -205,12 +210,7 @@ class Pulchritudinous_Queue_Model_Labour
             'execute_at'    => $when,
         ];
 
-        $transaction = Mage::getModel('core/resource_transaction');
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        $this->addData($data)->save();
 
         return $this;
     }
@@ -222,19 +222,11 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsFailed()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfigByName($this->getWorker());
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status'        => self::STATUS_FAILED,
             'started_at'    => time(),
             'finished_at'   => time(),
-        ];
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -246,15 +238,9 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsUnknown()
     {
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status' => self::STATUS_UNKNOWN,
-        ];
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -266,15 +252,9 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsSkipped()
     {
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status' => self::STATUS_SKIPPED,
-        ];
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -289,19 +269,12 @@ class Pulchritudinous_Queue_Model_Labour
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $config             = $configModel->getWorkerConfigByName($this->getWorker());
         $currentAttempts    = ($this->getAttempts()) ? $this->getAttempts() : 0;
-        $transaction        = Mage::getModel('core/resource_transaction');
 
-        $data               = [
+        $this->addData([
             'status'        => self::STATUS_RUNNING,
             'started_at'    => time(),
-            'pid'           => $this->getPid(),
             'attempts'      => $currentAttempts + 1,
-        ];
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }

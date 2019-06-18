@@ -40,6 +40,13 @@ class Pulchritudinous_Queue_Model_Labour_Batch
     protected $_id;
 
     /**
+     * Process ID.
+     *
+     * @var string
+     */
+    protected $_pid;
+
+    /**
      * Worker code.
      *
      * @var string
@@ -61,18 +68,29 @@ class Pulchritudinous_Queue_Model_Labour_Batch
     /**
      * Initial configuration.
      *
-     * @param string $id
-     * @param string $worker
-     * @param Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $collection
+     * @param array $args
      */
-    public function __construct($id, $worker, Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $collection)
+    public function __construct(array $args)
     {
+        list ($id, $pid, $worker, $collection) = $args;
+
         set_error_handler([$this, 'errorHandler']);
         register_shutdown_function([$this, 'shutdownHandler']);
 
         $this->_id = $id;
+        $this->_pid = $pid;
         $this->_worker = $worker;
         $this->_collection = $collection;
+    }
+
+    /**
+     * Get labour collection.
+     *
+     * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
+     */
+    public function getCollection()
+    {
+        return $this->_collection;
     }
 
     /**
@@ -107,6 +125,7 @@ class Pulchritudinous_Queue_Model_Labour_Batch
             $model = $config->getWorkerModel();
 
             $model::beforeBatchExecute($this);
+            $this->_beforeExecute();
 
             $this->_execute();
 
@@ -114,6 +133,27 @@ class Pulchritudinous_Queue_Model_Labour_Batch
         } catch (Exception $e) {
             Mage::logException($e);
         }
+    }
+
+    /**
+     * Synchronize data before start.
+     *
+     * @return Pulchritudinous_Queue_Model_Labour
+     */
+    protected function _beforeExecute()
+    {
+        $collection     = $this->_collection;
+        $transaction    = Mage::getModel('core/resource_transaction');
+        $data           = ['pid' => $this->_pid];
+
+        foreach ($collection as $labour) {
+            $labour->addData($data);
+            $transaction->addObject($labour);
+        }
+
+        $transaction->save();
+
+        return $this;
     }
 
     /**
