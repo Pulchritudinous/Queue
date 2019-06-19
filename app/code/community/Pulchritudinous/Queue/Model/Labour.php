@@ -163,15 +163,15 @@ class Pulchritudinous_Queue_Model_Labour
         $payload        = $this->getPayload(true);
         $childLabour    = $this->getChildLabour();
 
-        if ('batch' === $config->getRule()) {
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
             $collection =  Mage::getModel('pulchqueue/labour')
                 ->getCollection()
-                ->addFieldToFilter('batch', ['eq' => $this->getId()]);
+                ->addFieldToFilter('batch', ['eq' => $this->getBatch()]);
 
-            $batch = Mage::getModel('pulchqueue', [
-                $labour->getBatch(),
-                $labour->getPid(),
-                $config->getWorker(),
+            $batch = Mage::getModel('pulchqueue/labour_batch', [
+                $this->getBatch(),
+                $this->getPid(),
+                $this->getWorker(),
                 $collection
             ]);
 
@@ -270,6 +270,10 @@ class Pulchritudinous_Queue_Model_Labour
         $config             = $configModel->getWorkerConfigByName($this->getWorker());
         $currentAttempts    = ($this->getAttempts()) ? $this->getAttempts() : 0;
 
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
+            return $this;
+        }
+
         $this->addData([
             'status'        => self::STATUS_RUNNING,
             'started_at'    => time(),
@@ -286,6 +290,13 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _afterExecute()
     {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfigByName($this->getWorker());
+
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
+            return $this;
+        }
+
         $this->setAsFinished();
 
         return $this;

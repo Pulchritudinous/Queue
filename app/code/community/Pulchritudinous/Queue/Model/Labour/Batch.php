@@ -30,7 +30,7 @@
  * @author Anton Samuelsson <samuelsson.anton@gmail.com>
  */
 class Pulchritudinous_Queue_Model_Labour_Batch
-    extends Pulchritudinous_Queue_Model_Labour_Batch_Abstract
+    extends Varien_Object
 {
     /**
      * Batch ID.
@@ -91,6 +91,20 @@ class Pulchritudinous_Queue_Model_Labour_Batch
     public function getCollection()
     {
         return $this->_collection;
+    }
+
+    /**
+     * Set labour collection.
+     *
+     * @param  Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $collection
+     *
+     * @return Pulchritudinous_Queue_Model_Labour_Batch
+     */
+    public function setCollection(Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection $collection)
+    {
+        $this->_collection = $collection;
+
+        return $this;
     }
 
     /**
@@ -167,7 +181,7 @@ class Pulchritudinous_Queue_Model_Labour_Batch
 
         foreach ($collection as $labour) {
             try {
-                $labour->execute();
+                $labour->setIsBatchLabour(true)->execute();
 
                 if (Pulchritudinous_Queue_Model_Labour::STATUS_FAILED === $labour->getStatus()) {
                     throw new Exception('Reschedule');

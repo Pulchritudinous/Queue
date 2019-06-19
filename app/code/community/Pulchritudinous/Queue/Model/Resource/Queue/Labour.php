@@ -123,7 +123,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             $data,
             new Zend_Db_Expr(
                 $adapter->quoteInto('id = ?', (int) $labour->getId()) . ' OR ' .
-                $adapter->quoteInto('parent_id = ?', (int) $labour->getId())
+                $adapter->quoteInto('batch = ?', (int) $labour->getBatch())
             )
         );
 

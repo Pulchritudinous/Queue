@@ -43,7 +43,7 @@ class Pulchritudinous_Queue_Model_Queue
      * @param  array    $payload
      * @param  array    $options
      *
-     * @return Pulchritudinous_Queue_Model_Labour
+     * @return Pulchritudinous_Queue_Model_Labour|true
      *
      * @throws Mage_Core_Exception
      */
@@ -80,7 +80,7 @@ class Pulchritudinous_Queue_Model_Queue
             );
         }
 
-        if ($config->getRule() == 'ignore') {
+        if ('ignore' === $config->getRule()) {
             $hasLabour = $labourModel->getResource()->hasUnprocessedWorkerIdentity(
                 $worker,
                 $options->getIdentity()
@@ -89,7 +89,7 @@ class Pulchritudinous_Queue_Model_Queue
             if ($hasLabour == true) {
                 return true;
             }
-        } elseif ($config->getRule() == 'replace') {
+        } elseif ('replace' === $config->getRule()) {
             $labourModel->getResource()->setStatusOnUnprocessedByWorkerIdentity(
                 'replaced',
                 $worker,
@@ -157,7 +157,7 @@ class Pulchritudinous_Queue_Model_Queue
                     continue;
                 }
 
-                if ($config->getRule() == 'wait') {
+                if ('wait' === $config->getRule()) {
                     if (isset($running[$identity])) {
                         continue;
                     }
@@ -205,18 +205,17 @@ class Pulchritudinous_Queue_Model_Queue
     protected function _beforeReturn(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
     {
         $transaction    = Mage::getModel('core/resource_transaction');
-        $id             = uniqid('', true);
-        $data           = [
-            'status'    => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
-            'batch'     => $id,
-        ];
+        $data           = ['status' => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED];
 
-        if ($config->getRule() == 'batch') {
-            $queueCollection = $this->_getQueueCollection()
+        if ('batch' === $config->getRule()) {
+            $id = uniqid('', true);
+            $data['batch'] = $id;
+
+            $collection = $this->_getQueueCollection()
                 ->addFieldToFilter('identity', ['eq' => $labour->getIdentity()])
                 ->addFieldToFilter('worker', ['eq' => $labour->getWorker()]);
 
-            foreach ($queueCollection as $bundle) {
+            foreach ($collection as $bundle) {
                 if ($bundle->getId() != $labour->getId()) {
                     $bundle->addData($data);
 
