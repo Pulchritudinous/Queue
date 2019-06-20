@@ -91,7 +91,7 @@
             <priority>100</priority>
             <rule>wait</rule>
             <delay>0</delay>
-            <attempts>0</attempts>
+            <attempts>1</attempts>
             <reschedule>0</reschedule>
             <timeout>60</timeout>
             <logfile>pulchqueue_worker.log</logfile>
