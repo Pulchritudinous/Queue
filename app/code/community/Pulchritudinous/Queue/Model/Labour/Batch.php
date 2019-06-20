@@ -188,7 +188,9 @@ class Pulchritudinous_Queue_Model_Labour_Batch
                 }
             } catch (Exception $e) {
                 try {
-                    $labour->setBatch(null)->save();
+                    $labour->setBatch(null);
+                    $labour->setFinishedAt(null);
+                    $labour->setStartedAt(null);
                     $labour->reschedule();
                 } catch (Exception $e) {
                     Mage::logException($e);
