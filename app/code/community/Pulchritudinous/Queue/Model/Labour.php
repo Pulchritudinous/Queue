@@ -130,6 +130,10 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function execute()
     {
+        if (!$labour->getId()) {
+            Mage::throwException("Unable to load labour");
+        }
+
         try {
             if (!($this->getWorkerConfig() instanceof Varien_Object)) {
                 Mage::throwException(
