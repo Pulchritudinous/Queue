@@ -69,7 +69,7 @@ class Pulchritudinous_Queue_Shell
     {
         $this->_parseArgs();
 
-        if (!$this->getArg('labour')) {
+        if (!$this->getArg('labour') && !$this->getArg('list') && !$this->getArg('help')) {
             register_shutdown_function([$this, 'exitStrategy']);
         }
 
@@ -98,6 +98,11 @@ class Pulchritudinous_Queue_Shell
             return $this->_runLabour($id);
         }
 
+        if ($this->getArg('list')) {
+            echo $this->_listWorkers();
+            exit(0);
+        }
+
         if ($this->getArg('help')) {
             echo $this->usageHelp();
             exit(0);
@@ -121,6 +126,41 @@ class Pulchritudinous_Queue_Shell
         }
 
         exit(0);
+    }
+
+    /**
+     * List workers.
+     *
+     * @return string
+     */
+    protected function _listWorkers()
+    {
+        $workers    = Mage::getSingleton('pulchqueue/worker_config')->getWorkers();
+        $list       = [];
+        $re         = [];
+
+        foreach ($workers as $worker) {
+            $rec = new Varien_Object((array) $worker->getRecurring());
+
+            $name       = $worker->getWorkerName();
+            $prio       = $worker->getPriority();
+            $pattern    = $rec->getPattern();
+
+            $list[$name] = $prio;
+            $re[$name] = $pattern;
+        }
+
+        asort($list);
+
+        $table = new Zend_Text_Table(['columnWidths' => [10, 50, 20]]);
+        $table->appendRow(['Prio', 'Worker', 'Regex pattern']);
+
+        foreach ($list as $name => $prio) {
+            $pattern = $re[$name];
+            $table->appendRow([(string) $prio, (string) $name, (string) $pattern]);
+        }
+
+        return (string) $table;
     }
 
     /**
