@@ -78,8 +78,7 @@ class Pulchritudinous_Queue_Shell
             Mage::app($this->_appCode, $this->_appType);
         }
 
-        $this->_factory     = new Mage_Core_Model_Factory();
-        $this->_shellFile   = __FILE__;
+        $this->_shellFile = __FILE__;
 
         set_error_handler([$this, 'errorHandler']);
 
