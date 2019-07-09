@@ -145,14 +145,23 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     public function canStartNext($processCount)
     {
+        if (0 !== $this->canReceiveCount($processCount)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Can receive number of labours.
+     *
+     * @return boolean
+     */
+    public function canReceiveCount($processCount)
+    {
         $configModel    = Mage::getSingleton('pulchqueue/config');
         $configData     = $configModel->getQueueConfig();
 
-        if ($processCount < $configData->getThreads()) {
-            return true;
-        }
-
-        return false;
+        return max(0, $configData->getThreads() - $processCount);
     }
 
     /**

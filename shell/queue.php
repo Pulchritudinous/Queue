@@ -188,34 +188,32 @@ class Pulchritudinous_Queue_Shell
                     continue;
                 }
 
-                $labour = $queue->receive();
+                $labours = $queue->receive($server->canReceiveCount($processes->count()));
 
                 if ($labour === false) {
                     sleep($configData->getPoll());
                     continue;
                 }
 
-                $resource = $server->startChildProcess($labour);
+                foreach ($labours as $labour) {
+                    $resource = $server->startChildProcess($labour);
 
-                $validateProcesses = @self::validateProcess($resource);
+                    $validateProcesses = @self::validateProcess($resource);
 
-                if ($validateProcesses) {
-                    $status = proc_get_status($resource);
+                    if ($validateProcesses) {
+                        $status = proc_get_status($resource);
 
-                    $labour->getResource()->updateField($labour, 'pid', $status['pid']);
+                        $labour->getResource()->updateField($labour, 'pid', $status['pid']);
 
-                    $processes->addItem(
-                        new Varien_Object([
-                            'id'        => $status['pid'],
-                            'resource'  => $resource,
-                            'labour'    => $labour,
-                            'started'   => time(),
-                        ])
-                    );
-                }
-
-                if (!$server->canStartNext($processes->count())) {
-                    sleep($configData->getPoll());
+                        $processes->addItem(
+                            new Varien_Object([
+                                'id'        => $status['pid'],
+                                'resource'  => $resource,
+                                'labour'    => $labour,
+                                'started'   => time(),
+                            ])
+                        );
+                    }
                 }
             }
         } catch (Exception $e) {

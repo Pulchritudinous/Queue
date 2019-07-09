@@ -112,15 +112,19 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Receive next job from the queue.
      *
+     * @param  integer $qty
+     *
      * @return Pulchritudinous_Queue_Model_Labour|false
      */
-    public function receive()
+    public function receive($qty = 1)
     {
+        $qty                = max(1, (int) $qty);
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
         $pageNr             = 0;
         $runningCollection  = $this->getRunning();
         $runningWorkerCount = [];
+        $labours            = [];
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
@@ -134,47 +138,42 @@ class Pulchritudinous_Queue_Model_Queue
             $runningWorkerCount[$labour->getWorker()]++;
         }
 
-        $queueCollection = $this->_getQueueCollection();
+        $queueCollection    = $this->_getQueueCollection();
+        $iterator           = Mage::getModel('pulchqueue/iterator', $queueCollection);
 
-        $queueCollection->setPageSize(50);
+        foreach ($iterator as $labour) {
+            $config         = $configModel->getWorkerConfigByName($labour->getWorker());
+            $identity       = "{$labour->getWorker()}-{$labour->getIdentity()}";
+            $currentRunning = isset($runningWorkerCount[$labour->getWorker()])
+                ? $runningWorkerCount[$labour->getWorker()]
+                : 0;
 
-        $pages  = $queueCollection->getLastPageNumber();
-        $pageNr = 1;
-
-        do {
-            $queueCollection
-                ->setCurPage($pageNr)
-                ->load();
-
-            foreach ($queueCollection as $labour) {
-                $config         = $configModel->getWorkerConfigByName($labour->getWorker());
-                $identity       = "{$labour->getWorker()}-{$labour->getIdentity()}";
-                $currentRunning = isset($runningWorkerCount[$labour->getWorker()])
-                    ? $runningWorkerCount[$labour->getWorker()]
-                    : 0;
-
-                if (!$config) {
-                    continue;
-                }
-
-                if ('wait' === $config->getRule()) {
-                    if (isset($running[$identity])) {
-                        continue;
-                    }
-                }
-
-                if ($config->getLimit() && $config->getLimit() <= $currentRunning) {
-                    continue;
-                }
-
-                return $this->_beforeReturn($labour, $config);
+            if (!$config) {
+                continue;
             }
 
-            $pageNr++;
-            $queueCollection->clear();
-        } while ($pageNr <= $pages);
+            if ($config->getRule() == 'wait') {
+                if (isset($running[$identity])) {
+                    continue;
+                }
+            }
 
-        return false;
+            if ($config->getLimit() && $config->getLimit() <= $currentRunning) {
+                continue;
+            }
+
+            $labours[] = $this->_beforeReturn($labour, $config);
+
+            if (count($labours) >= $qty) {
+                break;
+            }
+        }
+
+        if (empty($labours)) {
+            return false;
+        }
+
+        return $labours;
     }
 
     /**
