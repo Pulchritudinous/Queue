@@ -190,7 +190,7 @@ class Pulchritudinous_Queue_Shell
 
                 $labours = $queue->receive($server->canReceiveCount($processes->count()));
 
-                if ($labour === false) {
+                if ($labours === false) {
                     sleep($configData->getPoll());
                     continue;
                 }
