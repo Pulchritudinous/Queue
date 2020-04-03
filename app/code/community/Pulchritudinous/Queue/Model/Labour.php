@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -94,6 +94,11 @@ class Pulchritudinous_Queue_Model_Labour
     use Pulchritudinous_Queue_Model_Trait_Queue;
 
     /**
+     * Labour model trait.
+     */
+    use Pulchritudinous_Queue_Model_Trait_Labour;
+
+    /**
      * Initial configuration.
      */
     public function __construct()
@@ -101,6 +106,7 @@ class Pulchritudinous_Queue_Model_Labour
         $this->_init('pulchqueue/queue_labour');
 
         set_error_handler([$this, 'errorHandler']);
+        register_shutdown_function([$this, 'shutdownHandler']);
     }
 
     /**
@@ -124,6 +130,10 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function execute()
     {
+        if (!$labour->getId()) {
+            Mage::throwException("Unable to load labour");
+        }
+
         try {
             if (!($this->getWorkerConfig() instanceof Varien_Object)) {
                 Mage::throwException(
@@ -157,12 +167,27 @@ class Pulchritudinous_Queue_Model_Labour
         $payload        = $this->getPayload(true);
         $childLabour    = $this->getChildLabour();
 
-        $model
-            ->setLabour($this)
-            ->setConfig($config)
-            ->setPayload($payload)
-            ->setChildLabour($childLabour)
-            ->execute();
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
+            $collection =  Mage::getModel('pulchqueue/labour')
+                ->getCollection()
+                ->addFieldToFilter('batch', ['eq' => $this->getBatch()]);
+
+            $batch = Mage::getModel('pulchqueue/labour_batch', [
+                $this->getBatch(),
+                $this->getPid(),
+                $this->getWorker(),
+                $collection
+            ]);
+
+            $batch->execute();
+        } else {
+            $model
+                ->setLabour($this)
+                ->setConfig($config)
+                ->setPayload($payload)
+                ->setChildLabour($childLabour)
+                ->execute();
+        }
 
         return $this;
     }
@@ -189,26 +214,7 @@ class Pulchritudinous_Queue_Model_Labour
             'execute_at'    => $when,
         ];
 
-        $transaction = Mage::getModel('core/resource_transaction');
-
-        if ($config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection();
-
-            $this->setChildLabour($queueCollection);
-
-            foreach ($queueCollection as $bundle) {
-                if ($bundle->getId() != $this->getId()) {
-                    $bundle->addData($data);
-
-                    $transaction->addObject($bundle);
-                }
-            }
-        }
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        $this->addData($data)->save();
 
         return $this;
     }
@@ -220,33 +226,11 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsFailed()
     {
-        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
-        $config         = $configModel->getWorkerConfigByName($this->getWorker());
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status'        => self::STATUS_FAILED,
             'started_at'    => time(),
             'finished_at'   => time(),
-        ];
-
-        if ($config instanceof Varien_Object && $config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection();
-
-            $this->setChildLabour($queueCollection);
-
-            foreach ($queueCollection as $bundle) {
-                if ($bundle->getId() != $this->getId()) {
-                    $bundle->addData($data);
-
-                    $transaction->addObject($bundle);
-                }
-            }
-        }
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -258,20 +242,9 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsUnknown()
     {
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status' => self::STATUS_UNKNOWN,
-        ];
-
-        foreach ($this->getBatchCollection() as $bundle) {
-            $bundle->addData($data);
-            $transaction->addObject($bundle);
-        }
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -283,20 +256,9 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function setAsSkipped()
     {
-        $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
+        $this->addData([
             'status' => self::STATUS_SKIPPED,
-        ];
-
-        foreach ($this->getBatchCollection() as $bundle) {
-            $bundle->addData($data);
-            $transaction->addObject($bundle);
-        }
-
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        ])->save();
 
         return $this;
     }
@@ -311,33 +273,16 @@ class Pulchritudinous_Queue_Model_Labour
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $config             = $configModel->getWorkerConfigByName($this->getWorker());
         $currentAttempts    = ($this->getAttempts()) ? $this->getAttempts() : 0;
-        $transaction        = Mage::getModel('core/resource_transaction');
 
-        $data               = [
-            'status'        => self::STATUS_RUNNING,
-            'started_at'    => time(),
-            'pid'           => $this->getPid(),
-            'attempts'      => $currentAttempts + 1,
-        ];
-
-        if ($config->getRule() == 'batch') {
-            $queueCollection = $this->getBatchCollection();
-
-            $this->setChildLabour($queueCollection);
-
-            foreach ($queueCollection as $bundle) {
-                if ($bundle->getId() != $this->getId()) {
-                    $bundle->addData($data);
-
-                    $transaction->addObject($bundle);
-                }
-            }
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
+            return $this;
         }
 
-        $this->addData($data);
-
-        $transaction->addObject($this);
-        $transaction->save();
+        $this->addData([
+            'status'        => self::STATUS_RUNNING,
+            'started_at'    => time(),
+            'attempts'      => $currentAttempts + 1,
+        ])->save();
 
         return $this;
     }
@@ -349,6 +294,13 @@ class Pulchritudinous_Queue_Model_Labour
      */
     protected function _afterExecute()
     {
+        $configModel    = Mage::getSingleton('pulchqueue/worker_config');
+        $config         = $configModel->getWorkerConfigByName($this->getWorker());
+
+        if ('batch' === $config->getRule() && true !== $this->getIsBatchLabour()) {
+            return $this;
+        }
+
         $this->setAsFinished();
 
         return $this;
@@ -367,29 +319,12 @@ class Pulchritudinous_Queue_Model_Labour
             'finished_at'   => time(),
         ];
 
-        foreach ($this->getBatchCollection() as $bundle) {
-            $bundle->addData($data);
-            $transaction->addObject($bundle);
-        }
-
         $this->addData($data);
 
         $transaction->addObject($this);
         $transaction->save();
 
         return $this;
-    }
-
-    /**
-     * Get batched labour collection.
-     *
-     * @return Pulchritudinous_Queue_Model_Resource_Queue_Labour_Collection
-     */
-    public function getBatchCollection()
-    {
-        return Mage::getModel('pulchqueue/labour')
-            ->getCollection()
-            ->addFieldToFilter('parent_id', ['eq' => $this->getId()]);
     }
 
     /**
@@ -421,6 +356,8 @@ class Pulchritudinous_Queue_Model_Labour
      */
     public function getWorkerConfig()
     {
+        $this->applyWorkerConfig();
+
         return $this->_workerConfig;
     }
 
@@ -475,101 +412,6 @@ class Pulchritudinous_Queue_Model_Labour
         }
 
         return $this;
-    }
-
-    /**
-     * Handle any errors.
-     *
-     * @param integer $errNo
-     * @param string  $errStr
-     * @param string  $errFile
-     * @param integer $errLine
-     */
-    public function errorHandler($errNo, $errStr, $errFile, $errLine)
-    {
-        $errno = $errNo & error_reporting();
-
-        if ($errno == 0) {
-            return false;
-        }
-
-        if (!defined('E_STRICT')) {
-            define('E_STRICT', 2048);
-        }
-
-        if (!defined('E_RECOVERABLE_ERROR')) {
-            define('E_RECOVERABLE_ERROR', 4096);
-        }
-
-        if (!defined('E_DEPRECATED')) {
-            define('E_DEPRECATED', 8192);
-        }
-
-        // PEAR specific message handling
-        if (stripos($errFile . $errStr, 'pear') !== false) {
-             // ignore strict and deprecated notices
-            if (($errno == E_STRICT) || ($errno == E_DEPRECATED)) {
-                return true;
-            }
-            // ignore attempts to read system files when open_basedir is set
-            if ($errno == E_WARNING && stripos($errStr, 'open_basedir') !== false) {
-                return true;
-            }
-        }
-
-        $errorMessage = '';
-
-        switch($errno){
-            case E_ERROR:
-                $errorMessage .= "Error";
-                break;
-            case E_WARNING:
-                $errorMessage .= "Warning";
-                break;
-            case E_PARSE:
-                $errorMessage .= "Parse Error";
-                break;
-            case E_NOTICE:
-                $errorMessage .= "Notice";
-                break;
-            case E_CORE_ERROR:
-                $errorMessage .= "Core Error";
-                break;
-            case E_CORE_WARNING:
-                $errorMessage .= "Core Warning";
-                break;
-            case E_COMPILE_ERROR:
-                $errorMessage .= "Compile Error";
-                break;
-            case E_COMPILE_WARNING:
-                $errorMessage .= "Compile Warning";
-                break;
-            case E_USER_ERROR:
-                $errorMessage .= "User Error";
-                break;
-            case E_USER_WARNING:
-                $errorMessage .= "User Warning";
-                break;
-            case E_USER_NOTICE:
-                $errorMessage .= "User Notice";
-                break;
-            case E_STRICT:
-                $errorMessage .= "Strict Notice";
-                break;
-            case E_RECOVERABLE_ERROR:
-                $errorMessage .= "Recoverable Error";
-                break;
-            case E_DEPRECATED:
-                $errorMessage .= "Deprecated functionality";
-                break;
-            default:
-                $errorMessage .= "Unknown error ($errno)";
-                break;
-        }
-
-        $errorMessage .= ": {$errStr}  in {$errFile} on line {$errLine}";
-
-        Mage::log($errorMessage, Zend_Log::ERR);
     }
 }
 

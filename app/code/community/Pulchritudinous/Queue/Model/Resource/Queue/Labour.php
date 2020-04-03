@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -123,7 +123,7 @@ class Pulchritudinous_Queue_Model_Resource_Queue_Labour
             $data,
             new Zend_Db_Expr(
                 $adapter->quoteInto('id = ?', (int) $labour->getId()) . ' OR ' .
-                $adapter->quoteInto('parent_id = ?', (int) $labour->getId())
+                $adapter->quoteInto('batch = ?', (int) $labour->getBatch())
             )
         );
 

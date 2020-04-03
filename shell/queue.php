@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ class Pulchritudinous_Queue_Shell
     {
         $this->_parseArgs();
 
-        if (!$this->getArg('labour')) {
+        if (!$this->getArg('labour') && !$this->getArg('list') && !$this->getArg('help')) {
             register_shutdown_function([$this, 'exitStrategy']);
         }
 
@@ -78,8 +78,7 @@ class Pulchritudinous_Queue_Shell
             Mage::app($this->_appCode, $this->_appType);
         }
 
-        $this->_factory     = new Mage_Core_Model_Factory();
-        $this->_shellFile   = __FILE__;
+        $this->_shellFile = __FILE__;
 
         set_error_handler([$this, 'errorHandler']);
 
@@ -96,6 +95,11 @@ class Pulchritudinous_Queue_Shell
     {
         if ($id = $this->getArg('labour')) {
             return $this->_runLabour($id);
+        }
+
+        if ($this->getArg('list')) {
+            echo $this->_listWorkers();
+            exit(0);
         }
 
         if ($this->getArg('help')) {
@@ -124,6 +128,41 @@ class Pulchritudinous_Queue_Shell
     }
 
     /**
+     * List workers.
+     *
+     * @return string
+     */
+    protected function _listWorkers()
+    {
+        $workers    = Mage::getSingleton('pulchqueue/worker_config')->getWorkers();
+        $list       = [];
+        $re         = [];
+
+        foreach ($workers as $worker) {
+            $rec = new Varien_Object((array) $worker->getRecurring());
+
+            $name       = $worker->getWorkerName();
+            $prio       = $worker->getPriority();
+            $pattern    = $rec->getPattern();
+
+            $list[$name] = $prio;
+            $re[$name] = $pattern;
+        }
+
+        asort($list);
+
+        $table = new Zend_Text_Table(['columnWidths' => [10, 50, 20]]);
+        $table->appendRow(['Prio', 'Worker', 'Regex pattern']);
+
+        foreach ($list as $name => $prio) {
+            $pattern = $re[$name];
+            $table->appendRow([(string) $prio, (string) $name, (string) $pattern]);
+        }
+
+        return (string) $table;
+    }
+
+    /**
      * Run server.
      */
     protected function _runServer()
@@ -135,7 +174,7 @@ class Pulchritudinous_Queue_Shell
 
         self::$configData   = $configData;
         self::$server       = $server;
-        self::$processes    = self::initProcessCollection($queue);
+        self::$processes    = new Varien_Data_Collection();
         $processes          = self::$processes;
 
         try {
@@ -149,64 +188,39 @@ class Pulchritudinous_Queue_Shell
                     continue;
                 }
 
-                $labour = $queue->receive();
+                $labours = $queue->receive($server->canReceiveCount($processes->count()));
 
-                if ($labour === false) {
+                if ($labours === false) {
                     sleep($configData->getPoll());
                     continue;
                 }
 
-                $resource = $server->startChildProcess($labour);
+                foreach ($labours as $labour) {
+                    $resource = $server->startChildProcess($labour);
 
-                $validateProcesses = @self::validateProcess($resource);
+                    $validateProcesses = @self::validateProcess($resource);
 
-                if ($validateProcesses) {
-                    $status = proc_get_status($resource);
+                    if ($validateProcesses) {
+                        $status = proc_get_status($resource);
 
-                    $labour->getResource()->updateField($labour, 'pid', $status['pid']);
+                        $labour->getResource()->updateField($labour, 'pid', $status['pid']);
 
-                    $processes->addItem(
-                        new Varien_Object([
-                            'id'        => $status['pid'],
-                            'resource'  => $resource,
-                            'labour'    => $labour,
-                            'started'   => time(),
-                        ])
-                    );
+                        $processes->addItem(
+                            new Varien_Object([
+                                'id'        => $status['pid'],
+                                'resource'  => $resource,
+                                'labour'    => $labour,
+                                'started'   => time(),
+                            ])
+                        );
+                    }
                 }
-
-                sleep($configData->getPoll());
             }
         } catch (Exception $e) {
             exit(0);
         }
 
         exit(0);
-    }
-
-    /**
-     * Init process collection.
-     *
-     * @param  Pulchritudinous_Queue_Model_Queue $queue
-     *
-     * @return Varien_Data_Collection
-     */
-    public static function initProcessCollection(Pulchritudinous_Queue_Model_Queue $queue)
-    {
-        $collection         = new Varien_Data_Collection();
-        $runingCollection   = $queue->getRunning(true);
-
-        foreach ($runingCollection as $labour) {
-            $collection->addItem(
-                new Varien_Object([
-                    'id'        => $labour->getPid(),
-                    'started'   => $labour->getStartedAt(),
-                    'labour'    => $labour,
-                ])
-            );
-        }
-
-        return $collection;
     }
 
     /**
@@ -220,7 +234,10 @@ class Pulchritudinous_Queue_Shell
 
         foreach ($processes as $process) {
             if (!self::validateProcess($process)) {
-                proc_close($process->getResource());
+                if (is_resource($process->getResource())) {
+                    proc_close($process->getResource());
+                }
+
                 $processes->removeItemByKey($process->getId());
             }
         }
@@ -242,6 +259,12 @@ class Pulchritudinous_Queue_Shell
             $timeout    = $config->getTimeout();
             $pid        = $labour->getPid();
 
+            if (null === $resource) {
+                $labour->setAsUnknown();
+
+                return false;
+            }
+
             if (0 != $timeout && (time() - $process->getStarted()) > $timeout) {
                 $labour->setAsUnknown();
 
@@ -261,7 +284,7 @@ class Pulchritudinous_Queue_Shell
 
         $status = proc_get_status($resource);
 
-        return $status['running'];
+        return (bool) @$status['running'];
     }
 
     /**

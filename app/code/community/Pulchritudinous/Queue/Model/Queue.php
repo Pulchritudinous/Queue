@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,7 +43,7 @@ class Pulchritudinous_Queue_Model_Queue
      * @param  array    $payload
      * @param  array    $options
      *
-     * @return Pulchritudinous_Queue_Model_Labour
+     * @return Pulchritudinous_Queue_Model_Labour|true
      *
      * @throws Mage_Core_Exception
      */
@@ -52,6 +52,10 @@ class Pulchritudinous_Queue_Model_Queue
         $configModel    = Mage::getSingleton('pulchqueue/worker_config');
         $config         = $configModel->getWorkerConfigByName($worker);
         $labourModel    = Mage::getModel('pulchqueue/labour');
+
+        if (!$worker) {
+            return $this;
+        }
 
         if (!$config) {
             Mage::throwException("Unable to find worker with name {$worker}");
@@ -76,7 +80,7 @@ class Pulchritudinous_Queue_Model_Queue
             );
         }
 
-        if ($config->getRule() == 'ignore') {
+        if ('ignore' === $config->getRule()) {
             $hasLabour = $labourModel->getResource()->hasUnprocessedWorkerIdentity(
                 $worker,
                 $options->getIdentity()
@@ -85,7 +89,7 @@ class Pulchritudinous_Queue_Model_Queue
             if ($hasLabour == true) {
                 return true;
             }
-        } elseif ($config->getRule() == 'replace') {
+        } elseif ('replace' === $config->getRule()) {
             $labourModel->getResource()->setStatusOnUnprocessedByWorkerIdentity(
                 'replaced',
                 $worker,
@@ -108,55 +112,68 @@ class Pulchritudinous_Queue_Model_Queue
     /**
      * Receive next job from the queue.
      *
+     * @param  integer $qty
+     *
      * @return Pulchritudinous_Queue_Model_Labour|false
      */
-    public function receive()
+    public function receive($qty = 1)
     {
+        $qty                = max(1, (int) $qty);
         $configModel        = Mage::getSingleton('pulchqueue/worker_config');
         $running            = [];
         $pageNr             = 0;
         $runningCollection  = $this->getRunning();
+        $runningWorkerCount = [];
+        $labours            = [];
 
         foreach ($runningCollection as $labour) {
             $identity = "{$labour->getWorker()}-{$labour->getIdentity()}";
 
             $running[$identity] = $identity;
-        }
 
-        $queueCollection = $this->_getQueueCollection();
-
-        $queueCollection->setPageSize(50);
-
-        $pages  = $queueCollection->getLastPageNumber();
-        $pageNr = 1;
-
-        do {
-            $queueCollection
-                ->setCurPage($pageNr)
-                ->load();
-
-            foreach ($queueCollection as $labour) {
-                $config     = $configModel->getWorkerConfigByName($labour->getWorker());
-                $identity   = "{$labour->getWorker()}-{$labour->getIdentity()}";
-
-                if (!$config) {
-                    continue;
-                }
-
-                if ($config->getRule() == 'wait') {
-                    if (isset($running[$identity])) {
-                        continue;
-                    }
-                }
-
-                return $this->_beforeReturn($labour, $config);
+            if (!isset($runningWorkerCount[$labour->getWorker()])) {
+                $runningWorkerCount[$labour->getWorker()] = 0;
             }
 
-            $pageNr++;
-            $queueCollection->clear();
-        } while ($pageNr <= $pages);
+            $runningWorkerCount[$labour->getWorker()]++;
+        }
 
-        return false;
+        $queueCollection    = $this->_getQueueCollection();
+        $iterator           = Mage::getModel('pulchqueue/iterator', $queueCollection);
+
+        foreach ($iterator as $labour) {
+            $config         = $configModel->getWorkerConfigByName($labour->getWorker());
+            $identity       = "{$labour->getWorker()}-{$labour->getIdentity()}";
+            $currentRunning = isset($runningWorkerCount[$labour->getWorker()])
+                ? $runningWorkerCount[$labour->getWorker()]
+                : 0;
+
+            if (!$config) {
+                continue;
+            }
+
+            if ($config->getRule() == 'wait') {
+                if (isset($running[$identity])) {
+                    continue;
+                }
+            }
+
+            if ($config->getLimit() && $config->getLimit() <= $currentRunning) {
+                continue;
+            }
+
+            $labours[] = $this->_beforeReturn($labour, $config);
+
+            if (count($labours) >= $qty) {
+                break;
+            }
+        }
+
+        if (empty($labours)) {
+            return false;
+        }
+
+        return $labours;
     }
 
     /**
@@ -187,25 +204,19 @@ class Pulchritudinous_Queue_Model_Queue
     protected function _beforeReturn(Pulchritudinous_Queue_Model_Labour $labour, Varien_Object $config)
     {
         $transaction    = Mage::getModel('core/resource_transaction');
-        $data           = [
-            'status' => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED,
-        ];
+        $data           = ['status' => Pulchritudinous_Queue_Model_Labour::STATUS_DEPLOYED];
 
-        if ($config->getRule() == 'batch') {
-            $queueCollection = $this->_getQueueCollection()
+        if ('batch' === $config->getRule()) {
+            $id = uniqid('', true);
+            $data['batch'] = $id;
+
+            $collection = $this->_getQueueCollection()
                 ->addFieldToFilter('identity', ['eq' => $labour->getIdentity()])
                 ->addFieldToFilter('worker', ['eq' => $labour->getWorker()]);
 
-            foreach ($queueCollection as $bundle) {
+            foreach ($collection as $bundle) {
                 if ($bundle->getId() != $labour->getId()) {
-                    $bundle->addData(
-                        array_merge(
-                            $data,
-                            [
-                                'parent_id' => $labour->getId(),
-                            ]
-                        )
-                    );
+                    $bundle->addData($data);
 
                     $transaction->addObject($bundle);
                 }

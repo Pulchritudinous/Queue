@@ -2,7 +2,7 @@
 /**
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Pulchritudinous
+ * Copyright (c) 2019 Pulchritudinous
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -120,6 +120,7 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     protected function _canStart()
     {
+        return true;
         return $this->_getLockStorage()->setLock();
     }
 
@@ -144,14 +145,23 @@ class Pulchritudinous_Queue_Model_Shell_Server
      */
     public function canStartNext($processCount)
     {
+        if (0 !== $this->canReceiveCount($processCount)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Can receive number of labours.
+     *
+     * @return boolean
+     */
+    public function canReceiveCount($processCount)
+    {
         $configModel    = Mage::getSingleton('pulchqueue/config');
         $configData     = $configModel->getQueueConfig();
 
-        if ($processCount < $configData->getThreads()) {
-            return true;
-        }
-
-        return false;
+        return max(0, $configData->getThreads() - $processCount);
     }
 
     /**
